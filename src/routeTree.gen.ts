@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as PlayersRouteImport } from './routes/players'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -25,11 +24,6 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApplyRoute = ApplyRouteImport.update({
-  id: '/apply',
-  path: '/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -56,7 +50,6 @@ const ReportsRoute = ReportsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/apply': typeof ApplyRoute
   '/history': typeof HistoryRoute
   '/players': typeof PlayersRoute
   '/profile': typeof ProfileRoute
@@ -65,7 +58,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/apply': typeof ApplyRoute
   '/history': typeof HistoryRoute
   '/players': typeof PlayersRoute
   '/profile': typeof ProfileRoute
@@ -75,7 +67,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/apply': typeof ApplyRoute
   '/history': typeof HistoryRoute
   '/players': typeof PlayersRoute
   '/profile': typeof ProfileRoute
@@ -83,28 +74,13 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/admin'
-    | '/apply'
-    | '/history'
-    | '/players'
-    | '/profile'
-    | '/reports'
+  fullPaths: '/' | '/admin' | '/history' | '/players' | '/profile' | '/reports'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/admin'
-    | '/apply'
-    | '/history'
-    | '/players'
-    | '/profile'
-    | '/reports'
+  to: '/' | '/admin' | '/history' | '/players' | '/profile' | '/reports'
   id:
     | '__root__'
     | '/'
     | '/admin'
-    | '/apply'
     | '/history'
     | '/players'
     | '/profile'
@@ -114,7 +90,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  ApplyRoute: typeof ApplyRoute
   HistoryRoute: typeof HistoryRoute
   PlayersRoute: typeof PlayersRoute
   ProfileRoute: typeof ProfileRoute
@@ -135,13 +110,6 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/apply': {
-      id: '/apply'
-      path: '/apply'
-      fullPath: '/apply'
-      preLoaderRoute: typeof ApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -178,7 +146,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  ApplyRoute: ApplyRoute,
   HistoryRoute: HistoryRoute,
   PlayersRoute: PlayersRoute,
   ProfileRoute: ProfileRoute,
