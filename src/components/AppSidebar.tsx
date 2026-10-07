@@ -2,7 +2,6 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   History,
-  Swords,
   User,
   Search,
   Flag,
