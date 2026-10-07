@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      coach_sessions: {
+        Row: {
+          advice: string
+          created_at: string
+          goal: string
+          id: string
+          stats: Json
+          user_id: string
+        }
+        Insert: {
+          advice: string
+          created_at?: string
+          goal: string
+          id?: string
+          stats: Json
+          user_id: string
+        }
+        Update: {
+          advice?: string
+          created_at?: string
+          goal?: string
+          id?: string
+          stats?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       host_applications: {
         Row: {
           accepted_rules: boolean
