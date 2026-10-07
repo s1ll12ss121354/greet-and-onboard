@@ -2,7 +2,6 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   History,
-  Swords,
   User,
   Search,
   Flag,
@@ -14,7 +13,6 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { to: "/", label: "Главная", icon: Home },
   { to: "/history", label: "История", icon: History },
-  { to: "/apply", label: "Заявка", icon: Swords },
   { to: "/profile", label: "Профиль", icon: User },
   { to: "/players", label: "Найти игрока", icon: Search },
   { to: "/reports", label: "Жалобы", icon: Flag },
