@@ -49,10 +49,10 @@ function HomePage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              to="/apply"
+              to="/profile"
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Подать заявку
+              Мой профиль
               <ArrowRight className="size-4" />
             </Link>
             <Link
