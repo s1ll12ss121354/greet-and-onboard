@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, Copy, Crown, UserPlus, Volume2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/match-found")({
   head: () => ({
@@ -13,11 +15,101 @@ export const Route = createFileRoute("/match-found")({
 });
 
 function MatchFoundPage() {
+  const { user, profile } = useAuth();
   const [copied, setCopied] = useState(false);
-  const host = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    return new URLSearchParams(window.location.search).get("host")?.trim() ?? "";
+  const [host, setHost] = useState("");
+  const [loadingHost, setLoadingHost] = useState(true);
+
+  const { queryHost, lobbyId } = useMemo(() => {
+    if (typeof window === "undefined") return { queryHost: "", lobbyId: "" };
+    const params = new URLSearchParams(window.location.search);
+    return {
+      queryHost: params.get("host")?.trim() ?? "",
+      lobbyId:
+        params.get("lobby")?.trim() ??
+        window.sessionStorage.getItem("recorn-lobby")?.trim() ??
+        "",
+    };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveHost() {
+      const sessionHost =
+        typeof window !== "undefined"
+          ? window.sessionStorage.getItem("recorn-match-host")?.trim() ?? ""
+          : "";
+
+      if (queryHost) {
+        setHost(queryHost);
+        setLoadingHost(false);
+        return;
+      }
+
+      if (sessionHost) {
+        setHost(sessionHost);
+        setLoadingHost(false);
+        return;
+      }
+
+      if (!lobbyId) {
+        setLoadingHost(false);
+        return;
+      }
+
+      const { data: lobby } = await supabase
+        .from("match_lobbies")
+        .select("host_user_id,status")
+        .eq("id", lobbyId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (lobby?.host_user_id) {
+        const { data: hostProfile } = await supabase
+          .from("profiles")
+          .select("nickname")
+          .eq("id", lobby.host_user_id)
+          .maybeSingle();
+
+        if (!cancelled && hostProfile?.nickname) {
+          setHost(hostProfile.nickname);
+          setLoadingHost(false);
+          return;
+        }
+      }
+
+      // Last-resort owner fallback for the match creator.
+      // The server-side force-start RPC uses the same rule.
+      if (
+        profile?.nickname?.trim().toLowerCase() === "isy_hesy09" &&
+        user?.id
+      ) {
+        const { data: member } = await supabase
+          .from("match_lobby_members")
+          .select("id")
+          .eq("lobby_id", lobbyId)
+          .eq("user_id", user.id)
+          .eq("member_kind", "player")
+          .maybeSingle();
+
+        if (!cancelled && member) {
+          setHost(profile.nickname.trim());
+          setLoadingHost(false);
+          return;
+        }
+      }
+
+      if (!cancelled) setLoadingHost(false);
+    }
+
+    void resolveHost();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lobbyId, profile?.nickname, queryHost, user?.id]);
 
   async function copyHost() {
     if (!host || !navigator.clipboard) return;
@@ -53,7 +145,11 @@ function MatchFoundPage() {
               Заявка в друзья
             </div>
 
-            {host ? (
+            {loadingHost ? (
+              <div className="mt-5 text-sm font-semibold text-muted-foreground">
+                Определяем хоста…
+              </div>
+            ) : host ? (
               <>
                 <div className="mt-3 break-all font-display text-2xl font-bold">
                   {host}
@@ -73,9 +169,14 @@ function MatchFoundPage() {
                 </div>
               </>
             ) : (
-              <p className="mt-3 text-sm font-semibold text-destructive">
-                Хост в этом лобби не найден. Обратитесь в поддержку RECORN.
-              </p>
+              <div className="mt-3">
+                <p className="text-sm font-semibold text-destructive">
+                  Не удалось определить хоста этого лобби.
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Обновите страницу один раз. Если хост так и не появится — обратитесь в поддержку RECORN.
+                </p>
+              </div>
             )}
           </div>
         </div>
