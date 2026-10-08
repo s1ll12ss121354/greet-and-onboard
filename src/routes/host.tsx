@@ -6,8 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/host")({
   head: () => ({ meta: [
-    { title: "Хост — ReCorN" },
-    { name: "description", content: "Подайте заявку на роль хоста ReCorN." },
+    { title: "Хост — GreetAndWin" },
+    { name: "description", content: "Подайте заявку на роль хоста GreetAndWin." },
   ]}),
   component: HostPage,
 });
@@ -115,7 +115,7 @@ function HostPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
-        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-primary"><Sparkles className="size-4" /> ReCorN Host</span>
+        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-primary"><Sparkles className="size-4" /> GreetAndWin Host</span>
         <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">Стань хостом.</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">Помогай проводить честные матчи Block Strike и поддерживай соревновательную сцену.</p>
       </div>
