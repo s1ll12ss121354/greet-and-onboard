@@ -127,6 +127,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-background">
         <ActivityTracker />
+        <MatchStartNotifier />
         <AppSidebar />
         <main className="min-h-screen min-w-0 px-3 pb-8 pt-24 sm:px-5 lg:px-8 lg:pt-28">
           <Outlet />
@@ -134,6 +135,90 @@ function RootComponent() {
       </div>
     </QueryClientProvider>
   );
+}
+
+function MatchStartNotifier() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+
+    let stopped = false;
+    const check = async () => {
+      if (stopped) return;
+      const lobbyId = window.sessionStorage.getItem("recorn-lobby");
+      if (!lobbyId) return;
+
+      const handledKey = "recorn-match-started:" + lobbyId;
+      if (window.sessionStorage.getItem(handledKey) === "1") return;
+
+      const { data: lobby, error } = await supabase
+        .from("match_lobbies")
+        .select("status,host_user_id")
+        .eq("id", lobbyId)
+        .maybeSingle();
+
+      if (error || !lobby || lobby.status !== "in_game") return;
+
+      let hostNickname = "";
+      if (lobby.host_user_id) {
+        const { data: host } = await supabase
+          .from("profiles")
+          .select("nickname")
+          .eq("id", lobby.host_user_id)
+          .maybeSingle();
+        hostNickname = host?.nickname ?? "";
+      }
+
+      window.sessionStorage.setItem(handledKey, "1");
+
+      try {
+        navigator.vibrate?.([350, 120, 350, 120, 500]);
+      } catch {
+        // Optional browser feature.
+      }
+
+      try {
+        const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtor) {
+          const audio = new AudioCtor();
+          const now = audio.currentTime;
+          [0, 0.16, 0.32].forEach((offset, index) => {
+            const oscillator = audio.createOscillator();
+            const gain = audio.createGain();
+            oscillator.type = "sine";
+            oscillator.frequency.value = index === 2 ? 880 : 660;
+            gain.gain.setValueAtTime(0.0001, now + offset);
+            gain.gain.exponentialRampToValueAtTime(0.16, now + offset + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.13);
+            oscillator.connect(gain);
+            gain.connect(audio.destination);
+            oscillator.start(now + offset);
+            oscillator.stop(now + offset + 0.14);
+          });
+          window.setTimeout(() => void audio.close(), 900);
+        }
+      } catch {
+        // Browser audio policy may block autoplay.
+      }
+
+      window.setTimeout(() => {
+        if (!stopped) {
+          const query = hostNickname ? "?host=" + encodeURIComponent(hostNickname) : "";
+          window.location.assign("/match-found" + query);
+        }
+      }, 700);
+    };
+
+    void check();
+    const timer = window.setInterval(() => void check(), 1500);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [user?.id]);
+
+  return null;
 }
 
 function ActivityTracker() {
