@@ -699,6 +699,8 @@ function eventLabel(event: string) {
     ban_request_created: "Создал запрос на бан",
     ban_request_approved: "Подтвердил бан",
     ban_request_rejected: "Отклонил запрос на бан",
+    report_approved: "Одобрил жалобу и забанил игрока",
+    report_rejected: "Отклонил жалобу",
   };
   return labels[event] || event;
 }
