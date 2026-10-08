@@ -84,10 +84,12 @@ type LoginEvent = {
 const btn = "rounded-md px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50";
 
 function AdminPage() {
-  const { roles, loading } = useAuth();
+  const { roles, loading, profile } = useAuth();
+  const isOwner = profile?.nickname.trim().toLowerCase() === "isy_hesy09";
   const isAdmin = roles.includes("admin");
   const isModerator = roles.includes("moderator");
-  const allowed = isAdmin || isModerator;
+  const effectiveAdmin = isAdmin || isOwner;
+  const allowed = effectiveAdmin || isModerator;
   const [tab, setTab] = useState<"reports" | "applications" | "players" | "logs" | "roles">("reports");
   const [apps, setApps] = useState<App[]>([]);
   const [players, setPlayers] = useState<Profile[]>([]);
@@ -112,7 +114,7 @@ function AdminPage() {
     setReports((r.data as Report[]) ?? []);
     setBanRequests((br.data as BanRequest[]) ?? []);
 
-    if (!isAdmin) return;
+    if (!effectiveAdmin) return;
 
     const [a, p, rolesResult, cr, ucr, logsResult, loginResult] = await Promise.all([
       supabase.from("host_applications").select("*").order("priority", { ascending: false }).order("created_at", { ascending: false }),
@@ -135,7 +137,7 @@ function AdminPage() {
 
   useEffect(() => {
     if (allowed) load();
-  }, [allowed, isAdmin]);
+  }, [allowed, effectiveAdmin]);
 
   useEffect(() => {
     if (isModerator && !isAdmin) setTab("reports");
@@ -250,8 +252,8 @@ function AdminPage() {
     await refresh(error ? "Не удалось обработать запрос" : approve ? "Бан подтверждён" : "Запрос отклонён");
   }
 
-  const title = isAdmin ? "Админ-панель" : "Модерация";
-  const tabs = isAdmin
+  const title = effectiveAdmin ? "Админ-панель" : "Модерация";
+  const tabs = effectiveAdmin
     ? [
         ["reports", "Жалобы", FileWarning],
         ["applications", "Заявки", ClipboardList],
@@ -293,7 +295,7 @@ function AdminPage() {
         <ReportsSection
           reports={reports}
           banRequests={banRequests}
-          isAdmin={isAdmin}
+          isAdmin={effectiveAdmin}
           busy={busy}
           onRequestBan={requestBan}
           onReviewBan={reviewBan}
@@ -302,11 +304,11 @@ function AdminPage() {
         />
       )}
 
-      {isAdmin && tab === "applications" && (
+      {effectiveAdmin && tab === "applications" && (
         <ApplicationsSection apps={apps} busy={busy} onDecide={decide} />
       )}
 
-      {isAdmin && tab === "players" && (
+      {effectiveAdmin && tab === "players" && (
         <PlayersSection
           players={players}
           roles={allRoles}
@@ -316,6 +318,13 @@ function AdminPage() {
           onElo={setElo}
           onBan={setBan}
           onRole={toggleRole}
+          ownerCanAdmin={isOwner}
+          onAdmin={async (userId) => {
+            setBusy(true);
+            const { error } = await supabase.rpc("owner_grant_admin", { p_user_id: userId });
+            setBusy(false);
+            await refresh(error ? "Не удалось выдать администратора" : "Права администратора выданы");
+          }}
           onSupportPriority={setSupportPriority}
           onAssignCustom={async (userId, roleId) => {
             setBusy(true);
@@ -332,8 +341,8 @@ function AdminPage() {
         />
       )}
 
-      {isAdmin && tab === "logs" && <LogsSection activity={activity} logins={logins} players={players} />}
-      {isAdmin && tab === "roles" && (
+      {effectiveAdmin && tab === "logs" && <LogsSection activity={activity} logins={logins} players={players} />}
+      {effectiveAdmin && tab === "roles" && (
         <RolesSection
           customRoles={customRoles}
           busy={busy}
@@ -512,6 +521,8 @@ function PlayersSection({
   onElo: (p: Profile, n: number) => void;
   onBan: (p: Profile, banned: boolean) => void;
   onRole: (p: Profile, role: "moderator" | "host") => void;
+  ownerCanAdmin: boolean;
+  onAdmin: (userId: string) => void;
   onSupportPriority: (p: Profile, enabled: boolean) => void;
   onAssignCustom: (userId: string, roleId: string) => void;
   onRemoveCustom: (userId: string, roleId: string) => void;
@@ -531,6 +542,8 @@ function PlayersSection({
             onElo={(n) => onElo(p, n)}
             onBan={() => onBan(p, !p.banned)}
             onRole={(r) => onRole(p, r)}
+            ownerCanAdmin={ownerCanAdmin}
+            onAdmin={() => onAdmin(p.id)}
             onSupportPriority={(enabled) => onSupportPriority(p, enabled)}
             onAssign={(roleId) => onAssignCustom(p.id, roleId)}
             onRemove={(roleId) => onRemoveCustom(p.id, roleId)}
@@ -562,6 +575,8 @@ function PlayerCard({
   onElo: (n: number) => void;
   onBan: () => void;
   onRole: (r: "moderator" | "host") => void;
+  ownerCanAdmin: boolean;
+  onAdmin: () => void;
   onSupportPriority: (enabled: boolean) => void;
   onAssign: (roleId: string) => void;
   onRemove: (roleId: string) => void;
@@ -597,6 +612,11 @@ function PlayerCard({
         </div>
         <button disabled={busy} onClick={() => onRole("moderator")} className={`${btn} bg-secondary`}>{roles.includes("moderator") ? "Снять модера" : "Дать модера"}</button>
         <button disabled={busy} onClick={() => onRole("host")} className={`${btn} bg-secondary`}>{roles.includes("host") ? "Снять хоста" : "Дать хоста"}</button>
+        {ownerCanAdmin && (
+          <button disabled={busy || roles.includes("admin")} onClick={onAdmin} className={`${btn} bg-primary text-primary-foreground`}>
+            {roles.includes("admin") ? "Уже админ" : "Дать админа"}
+          </button>
+        )}
         <button disabled={busy} onClick={onBan} className={`${btn} bg-destructive text-destructive-foreground`}>{p.banned ? "Разбанить" : "Забанить"}</button>
       </div>
 
