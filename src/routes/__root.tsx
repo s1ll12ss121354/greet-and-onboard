@@ -82,9 +82,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "GreetAndWin — Block Strike" },
-      { name: "description", content: "GreetAndWin — платформа для игроков Block Strike: профили, статистика, матчи и заявки." },
-      { property: "og:title", content: "GreetAndWin — Block Strike" },
+      { title: "ReCorN — Block Strike" },
+      { name: "description", content: "ReCorN — платформа для игроков Block Strike: профили, статистика, матчи и заявки." },
+      { property: "og:title", content: "ReCorN — Block Strike" },
       { property: "og:description", content: "Профили, статистика и матчи игроков Block Strike." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
