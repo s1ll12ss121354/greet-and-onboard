@@ -21,8 +21,6 @@ type Player = {
   elo: number;
   wins: number;
   losses: number;
-  banned: boolean;
-  ban_until: string | null;
 };
 
 function levelForElo(elo: number) {
