@@ -43,11 +43,10 @@ function ReportsPage() {
             e.preventDefault();
             if (!user) { setErr("Войдите, чтобы отправить жалобу"); return; }
             const fd = new FormData(e.currentTarget);
-            const { error } = await supabase.from("reports").insert({
-              user_id: user.id,
-              target_nick: String(fd.get("target")),
-              reason: String(fd.get("reason")),
-              details: String(fd.get("details")),
+            const { error } = await supabase.rpc("submit_report", {
+              p_target_nick: String(fd.get("target")),
+              p_reason: String(fd.get("reason")),
+              p_details: String(fd.get("details")),
             });
             if (error) setErr("Не удалось отправить жалобу");
             else setSent(true);
