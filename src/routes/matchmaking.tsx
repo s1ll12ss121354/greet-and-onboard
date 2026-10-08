@@ -73,6 +73,7 @@ function MatchmakingPage() {
   const [resultStats, setResultStats] = useState<Record<string, { kills: number; deaths: number; won: boolean }>>({});
 
   const staff = roles.some((r) => ["host","moderator","admin"].includes(r));
+  const isOwner = profile?.nickname.trim().toLowerCase() === "isy_hesy09";
 
   async function loadLobby(id: string | null) {
     if (!id) { setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setReadyStates({}); setReadyDeadline(null); setReadySeconds(60); return; }
@@ -203,6 +204,16 @@ function MatchmakingPage() {
       window.sessionStorage.setItem("recorn-lobby", id);
       await loadLobby(id);
     }
+    setBusy(false);
+  }
+
+  async function forceStartLobby() {
+    if (!lobby || !isOwner) return;
+    setBusy(true);
+    setError("");
+    const { error: e } = await supabase.rpc("mm_owner_start_lobby", { p_lobby_id: lobby.id });
+    if (e) setError(e.message || "Не удалось принудительно запустить матч.");
+    else await loadLobby(lobby.id);
     setBusy(false);
   }
 
@@ -423,6 +434,15 @@ function MatchmakingPage() {
                   <button onClick={() => setResultOpen(true)} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Внести результат</button>
                 </div>
               </div>
+            )}
+            {isOwner && lobby.status !== "in_game" && lobby.status !== "cancelled" && (
+              <button
+                disabled={busy}
+                onClick={forceStartLobby}
+                className="mt-5 mr-2 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                Принудительно начать игру
+              </button>
             )}
             <button disabled={busy} onClick={leaveLobby} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-destructive/30 px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><X className="size-4"/>{t.leave}</button>
           </div>
