@@ -64,7 +64,7 @@ function AuthPage() {
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold">Пароль</span>
-          <input required type="password" minLength={6} value={pass} onChange={(e) => setPass(e.target.value)} className={input} />
+          <input required type="password" minLength={10} value={pass} onChange={(e) => setPass(e.target.value)} className={input} />
           {mode === "signup" && (
             <span className="text-xs font-extrabold uppercase text-destructive">
               НЕ ВВОДИТЕ ПАРОЛЬ ОТ АККАУНТА ROBLOX
