@@ -71,10 +71,10 @@ declare
 begin
   if uid is null then raise exception 'AUTH_REQUIRED'; end if;
   if not exists (
-    select 1 from public.match_lobbies
-    where id = p_lobby_id and host_user_id = uid and status <> 'cancelled'
+    select 1 from public.match_lobby_members
+    where lobby_id = p_lobby_id and user_id = uid and member_kind = 'player'
   ) then
-    raise exception 'HOST_ONLY';
+    raise exception 'PLAYER_ONLY';
   end if;
 
   select count(*) into player_total
