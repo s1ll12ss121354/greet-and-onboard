@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Flag, CheckCircle2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -16,6 +18,8 @@ export const Route = createFileRoute("/reports")({
 
 function ReportsPage() {
   const [sent, setSent] = useState(false);
+  const { user } = useAuth();
+  const [err, setErr] = useState("");
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -35,15 +39,25 @@ function ReportsPage() {
       ) : (
         <form
           className="mt-6 flex flex-col gap-4 rounded-2xl border border-border bg-card p-6"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            setSent(true);
+            if (!user) { setErr("Войдите, чтобы отправить жалобу"); return; }
+            const fd = new FormData(e.currentTarget);
+            const { error } = await supabase.from("reports").insert({
+              user_id: user.id,
+              target_nick: String(fd.get("target")),
+              reason: String(fd.get("reason")),
+              details: String(fd.get("details")),
+            });
+            if (error) setErr("Не удалось отправить жалобу");
+            else setSent(true);
           }}
         >
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-semibold">Ник нарушителя</span>
             <input
               required
+              name="target"
               placeholder="Ник игрока в Block Strike"
               className="rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary"
             />
@@ -52,6 +66,7 @@ function ReportsPage() {
             <span className="text-sm font-semibold">Причина</span>
             <select
               required
+              name="reason"
               className="rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary"
             >
               <option value="">Выберите причину</option>
@@ -65,11 +80,13 @@ function ReportsPage() {
             <span className="text-sm font-semibold">Описание</span>
             <textarea
               required
+              name="details"
               rows={4}
               placeholder="Опишите ситуацию, приложите ссылки на доказательства..."
               className="resize-none rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary"
             />
           </label>
+          {err && <p className="text-sm text-destructive">{err}</p>}
           <button
             type="submit"
             className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-6 py-3 text-sm font-bold text-destructive-foreground transition-colors hover:bg-destructive/90"
