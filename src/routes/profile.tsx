@@ -53,7 +53,15 @@ function ProfilePage() {
       });
       if (error) throw error;
       window.location.reload();
-    } catch (e) { alert(e instanceof Error ? e.message : "Не удалось загрузить изображение."); }
+    } catch (e) {
+      const message =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e !== null && "message" in e
+            ? String((e as { message?: unknown }).message ?? "Неизвестная ошибка Supabase.")
+            : String(e ?? "Неизвестная ошибка Supabase.");
+      alert(`Не удалось загрузить изображение: ${message}`);
+    }
     finally { setUploading(null); }
   }
   const stats = [
