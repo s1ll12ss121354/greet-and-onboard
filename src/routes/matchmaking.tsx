@@ -377,36 +377,7 @@ function MatchmakingPage() {
               </div>
             )}
 
-            {lobby.status === "ready_check" && members.some((m) => m.user_id === user.id && m.member_kind === "player") && (
-              <div className="mt-5 rounded-2xl border-2 border-primary bg-primary/10 p-4 shadow-lg">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="font-display text-lg font-bold">Готовность к матчу</div>
-                    <div className="mt-1 text-sm text-muted-foreground">Подтвердите готовность до окончания таймера.</div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <span className="rounded-xl border border-border bg-background px-3 py-2 font-mono text-sm font-bold">{readySeconds}s</span>
-                    <button
-                      disabled={busy}
-                      onClick={() => setReady(!Boolean(readyStates[user.id]))}
-                      className="rounded-xl bg-primary px-6 py-3 font-display font-bold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
-                    >
-                      {readyStates[user.id] ? "READY ✓" : "READY"}
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {members.filter((m) => m.member_kind === "player").map((m) => {
-                    const p = players.find((x) => x.id === m.user_id);
-                    return <span key={m.user_id} className="rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold">
-                      {p?.nickname ?? "Player"} · {readyStates[m.user_id] ? "READY" : "Ожидает"}
-                    </span>;
-                  })}
-                </div>
-              </div>
-            )}
-
-            {lobby.player_count >= 10 && (
+                        {lobby.player_count >= 10 && (
               <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div><div className="font-display text-lg font-bold">Выбор карты</div><div className="text-xs text-muted-foreground">{lobby.selected_map ? "Карта выбрана." : "Выберите одну из трёх карт."}</div></div>
