@@ -565,6 +565,8 @@ function PlayerCard({
   onElo,
   onBan,
   onRole,
+  ownerCanAdmin,
+  onAdmin,
   onSupportPriority,
   onAssign,
   onRemove,
