@@ -75,6 +75,11 @@ function AuthPage() {
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold">Пароль</span>
           <input required type="password" minLength={6} value={pass} onChange={(e) => setPass(e.target.value)} className={input} />
+          {mode === "signup" && (
+            <span className="text-xs font-extrabold uppercase text-destructive">
+              НЕ ВВОДИТЕ ПАРОЛЬ ОТ АККАУНТА ROBLOX
+            </span>
+          )}
         </label>
         {err && <p className="text-sm text-destructive">{err}</p>}
         <button disabled={busy} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60">
