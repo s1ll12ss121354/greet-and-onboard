@@ -4,7 +4,7 @@ import { streamText } from "ai";
 const RUN_ID = "X-Lovable-AIG-Run-ID";
 
 export async function generateCoachAdvice(system: string, prompt: string) {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI не настроен");
   let runId: string | undefined;
   const provider = createOpenAI({
