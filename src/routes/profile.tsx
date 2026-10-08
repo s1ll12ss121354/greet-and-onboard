@@ -72,7 +72,7 @@ function ProfilePage() {
   ];
   return <div className="mx-auto max-w-5xl">
     <section className="overflow-hidden border border-border bg-card">
-      <div className="relative min-h-64 overflow-hidden">
+      <div className="relative min-h-[520px] overflow-hidden sm:min-h-[420px] lg:min-h-64">
         {profile.banner_url ? (
           <>
             <img
@@ -88,10 +88,10 @@ function ProfilePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(180,255,80,.14),transparent_38%)] bg-secondary" />
         )}
 
-        <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex items-end gap-5">
-              <div className="size-24 shrink-0 overflow-hidden rounded-md border-2 border-background/80 bg-primary/10 shadow-2xl">
+        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 lg:p-8">
+          <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex min-w-0 items-end gap-3 sm:gap-5">
+              <div className="size-20 shrink-0 overflow-hidden rounded-md sm:size-24 border-2 border-background/80 bg-primary/10 shadow-2xl">
                 {profile.avatar_url ? (
                   <img src={profile.avatar_url} alt={profile.nickname} className="size-full object-cover" />
                 ) : (
@@ -102,8 +102,8 @@ function ProfilePage() {
               </div>
 
               <div className="pb-1 text-white">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="font-display text-2xl font-bold lg:text-3xl">{profile.nickname}</h1>
+                <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+                  <h1 className="max-w-full break-words font-display text-2xl font-bold lg:text-3xl">{profile.nickname}</h1>
                   <span className="border border-white/30 bg-black/30 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white">
                     LVL {level}
                   </span>
@@ -117,20 +117,20 @@ function ProfilePage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex gap-2">
+            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between lg:justify-end">
+              <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
                 <input ref={bannerRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>e.target.files?.[0]&&uploadMedia("banner",e.target.files[0])}/>
                 <input ref={avatarRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>e.target.files?.[0]&&uploadMedia("avatar",e.target.files[0])}/>
-                <button disabled={!!uploading} onClick={()=>bannerRef.current?.click()} className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 disabled:opacity-50">
+                <button disabled={!!uploading} onClick={()=>bannerRef.current?.click()} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white/15 px-3 py-2 text-xs font-semibold text-white backdrop-blur hover:bg-white/20 disabled:opacity-50 sm:w-auto sm:text-sm">
                   {uploading==="banner"?<Loader2 className="size-4 animate-spin"/>:<ImageIcon className="size-4"/>} Изменить баннер
                 </button>
                 <button disabled={!!uploading} onClick={()=>avatarRef.current?.click()} className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 disabled:opacity-50">
                   {uploading==="avatar"?<Loader2 className="size-4 animate-spin"/>:<Upload className="size-4"/>} Загрузить аватар
                 </button>
               </div>
-              <div className="text-right text-white">
+              <div className="text-left text-white sm:text-right">
                 <div className="text-xs font-semibold uppercase tracking-widest text-white/70">ELO</div>
-                <div className="font-display text-5xl font-extrabold tracking-tight text-white">{profile.elo}</div>
+                <div className="font-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl">{profile.elo}</div>
               </div>
             </div>
           </div>
