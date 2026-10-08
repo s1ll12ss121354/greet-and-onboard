@@ -340,6 +340,14 @@ function AdminPage() {
           onRefresh={() => refresh()}
         />
       )}
+      {banDialogReport && (
+        <BanDialog
+          report={banDialogReport}
+          busy={busy}
+          onCancel={() => setBanDialogReport(null)}
+          onConfirm={(minutes, reason) => reviewReport(banDialogReport, "resolved", minutes, reason)}
+        />
+      )}
     </div>
   );
 }
