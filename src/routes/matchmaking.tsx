@@ -199,7 +199,7 @@ function MatchmakingPage() {
     if (!user) return;
     setBusy(true); setError("");
     const { data, error: e } = await supabase.rpc("mm_search_lobby");
-    if (e || !data) setError(e?.message ?? t.error);
+    if (e) setError(e.message ?? t.error);
     else if (!data) {
       setError("Supabase создал вызов, но не вернул ID лобби.");
     } else {
