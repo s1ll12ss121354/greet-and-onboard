@@ -13,6 +13,8 @@ export type Profile = {
   losses: number;
   banned: boolean;
   support_priority: boolean;
+  avatar_url: string | null;
+  banner_url: string | null;
 };
 
 export function useAuth() {
