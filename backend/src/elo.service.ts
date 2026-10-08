@@ -1,4 +1,68 @@
 import {prisma} from "./core.js";
 const expected=(a:number,b:number)=>1/(1+10**((b-a)/400));
 export function eloDelta(my:number,opp:number,win:boolean,k=32){return Math.round(k*((win?1:0)-expected(my,opp)))}
-export async function finalizeElo(matchId:string){const m=await prisma.match.findUnique({where:{id:matchId},include:{players:{include:{team:true,user:{include:{stats:true}}}}}});if(!m||!m.result)throw new Error("RESULT_REQUIRED");const a=m.players.filter(p=>p.team?.side==="A"),b=m.players.filter(p=>p.team?.side==="B");const avg=(xs:any[])=>xs.reduce((s,p)=>s+(p.user.stats?.elo??1000),0)/Math.max(1,xs.length);const ea=avg(a),eb=avg(b);const aWin=m.result.winnerTeam==="A";await prisma.$transaction(async tx=>{for(const p of m.players){const my=p.user.stats?.elo??1000;const opp=p.team?.side==="A"?eb:ea;const d=eloDelta(my,opp,p.team?.side===m.result!.winnerTeam);const before=my;const after=Math.max(100,Math.min(4000,before+d));await tx.playerStats.upsert({where:{userId:p.userId},create:{userId:p.userId,elo:after,games:1,wins:p.team?.side===m.result!.winnerTeam?1:0,losses:p.team?.side===m.result!.winnerTeam?0:1},update:{elo:after,games:{increment:1},wins:p.team?.side===m.result!.winnerTeam?{increment:1}:undefined,losses:p.team?.side===m.result!.winnerTeam?undefined:{increment:1}}});await tx.eloHistory.create({data:{matchId,userId:p.userId,beforeElo:before,delta:d,afterElo:after,kills:p.kills,deaths:p.deaths}})}await tx.match.update({where:{id:matchId},data:{status:"COMPLETED",completedAt:new Date(),result:{update:{finalizedAt:new Date()}}}})});}
+
+export async function finalizeElo(matchId:string){
+  const m=await prisma.match.findUnique({
+    where:{id:matchId},
+    include:{players:{include:{team:true,user:{include:{stats:true}}}}}
+  });
+  if(!m||!m.result)throw new Error("RESULT_REQUIRED");
+
+  const players=m.players.filter(p=>p.status==="ACCEPTED");
+  if(players.length<2)throw new Error("NOT_ENOUGH_ACTIVE_PLAYERS");
+
+  const a=players.filter(p=>p.team?.side==="A");
+  const b=players.filter(p=>p.team?.side==="B");
+  const avg=(xs:any[])=>xs.reduce((s,p)=>s+(p.user.stats?.elo??1000),0)/Math.max(1,xs.length);
+  const ea=avg(a),eb=avg(b);
+  const aWin=m.result.winnerTeam==="A";
+
+  await prisma.$transaction(async tx=>{
+    for(const p of players){
+      const my=p.user.stats?.elo??1000;
+      const opp=p.team?.side==="A"?eb:ea;
+      const d=eloDelta(my,opp,p.team?.side===m.result!.winnerTeam);
+      const before=my;
+      const after=Math.max(100,Math.min(4000,before+d));
+
+      await tx.playerStats.upsert({
+        where:{userId:p.userId},
+        create:{
+          userId:p.userId,
+          elo:after,
+          games:1,
+          wins:p.team?.side===m.result!.winnerTeam?1:0,
+          losses:p.team?.side===m.result!.winnerTeam?0:1
+        },
+        update:{
+          elo:after,
+          games:{increment:1},
+          wins:p.team?.side===m.result!.winnerTeam?{increment:1}:undefined,
+          losses:p.team?.side===m.result!.winnerTeam?undefined:{increment:1}
+        }
+      });
+
+      await tx.eloHistory.create({
+        data:{
+          matchId,
+          userId:p.userId,
+          beforeElo:before,
+          delta:d,
+          afterElo:after,
+          kills:p.kills,
+          deaths:p.deaths
+        }
+      });
+    }
+
+    await tx.match.update({
+      where:{id:matchId},
+      data:{
+        status:"COMPLETED",
+        completedAt:new Date(),
+        result:{update:{finalizedAt:new Date()}}
+      }
+    });
+  });
+}
