@@ -80,7 +80,19 @@ function MatchmakingPage() {
       supabase.from("match_lobbies").select("id,status,creator_id,search_started_at,host_user_id,selected_map").eq("id",id).maybeSingle(),
       supabase.from("match_lobby_members").select("id,user_id,member_kind,team,joined_at").eq("lobby_id",id).order("joined_at"),
     ]);
-    if (l.error || !l.data) { setLobby(null); return; }
+    if (l.error) {
+      setError(l.error.message || "Не удалось загрузить лобби.");
+      return;
+    }
+    if (m.error) {
+      setError(m.error.message || "Не удалось загрузить игроков лобби.");
+      return;
+    }
+    if (!l.data) {
+      setError("Лобби не найдено.");
+      setLobby(null);
+      return;
+    }
     const rows = (m.data ?? []) as Member[];
     const ids = rows.map((x) => x.user_id);
     const { data: voteRows } = await supabase.from("match_lobby_map_votes").select("map_name,user_id").eq("lobby_id", id);
@@ -88,7 +100,11 @@ function MatchmakingPage() {
     setMapVotes(counts);
     setMyMapVote((voteRows ?? []).find((v) => v.user_id === user?.id)?.map_name ?? null);
     setReadyStates({});
-    const p = ids.length ? await supabase.from("profiles").select("id,nickname,elo").in("id",ids) : { data: [] };
+    const p = ids.length ? await supabase.from("profiles").select("id,nickname,elo").in("id",ids) : { data: [], error: null };
+    if (p.error) {
+      setError(p.error.message || "Не удалось загрузить профили игроков.");
+      return;
+    }
     const mapped = (p.data ?? []) as Player[];
     setMembers(rows);
     setPlayers(mapped);
@@ -103,7 +119,11 @@ function MatchmakingPage() {
   }
 
   async function loadOpen() {
-    const { data } = await supabase.rpc("mm_open_lobbies");
+    const { data, error: e } = await supabase.rpc("mm_open_lobbies");
+    if (e) {
+      setError(e.message || "Не удалось загрузить открытые лобби.");
+      return;
+    }
     setOpenLobbies((data ?? []) as Lobby[]);
   }
 
@@ -163,7 +183,9 @@ function MatchmakingPage() {
     setBusy(true); setError("");
     const { data, error: e } = await supabase.rpc("mm_search_lobby");
     if (e || !data) setError(e?.message ?? t.error);
-    else {
+    else if (!data) {
+      setError("Supabase создал вызов, но не вернул ID лобби.");
+    } else {
       const id = String(data);
       window.sessionStorage.setItem("recorn-lobby", id);
       await loadLobby(id);
