@@ -457,8 +457,35 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+        mm_create_lobby: {
+          Args: Record<PropertyKey, never>
+          Returns: string
+        }
+        mm_leave_lobby: {
+          Args: { p_lobby_id: string }
+          Returns: boolean
+        }
+        mm_open_lobbies: {
+          Args: Record<PropertyKey, never>
+          Returns: {
+            id: string
+            status: string
+            creator_id: string
+            player_count: number
+            spectator_count: number
+            search_started_at: string
+            host_user_id: string | null
+          }[]
+        }
+        mm_search_lobby: {
+          Args: Record<PropertyKey, never>
+          Returns: string
+        }
+        mm_join_lobby: {
+          Args: { p_lobby_id: string; p_spectator?: boolean }
+          Returns: Json
+        }
       }
-    }
     Enums: {
       app_role: "host" | "moderator" | "admin"
     }
@@ -591,32 +618,4 @@ export const Constants = {
       app_role: ["host", "moderator", "admin"],
     },
   },
-} as const        mm_create_lobby: {
-          Args: Record<PropertyKey, never>
-          Returns: string
-        }
-        mm_leave_lobby: {
-          Args: { p_lobby_id: string }
-          Returns: boolean
-        }
-        mm_open_lobbies: {
-          Args: Record<PropertyKey, never>
-          Returns: {
-            id: string
-            status: string
-            creator_id: string
-            player_count: number
-            spectator_count: number
-            search_started_at: string
-            host_user_id: string | null
-          }[]
-        }
-        mm_search_lobby: {
-          Args: Record<PropertyKey, never>
-          Returns: string
-        }
-        mm_join_lobby: {
-          Args: { p_lobby_id: string; p_spectator?: boolean }
-          Returns: Json
-        }
-
+} as const
