@@ -36,4 +36,5 @@ jobs:
         run: |
           cd backend
           bun install
+          bun run prisma:generate
           bun run build
