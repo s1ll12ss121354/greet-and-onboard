@@ -323,7 +323,7 @@ function AdminPage() {
             setBusy(true);
             const { error } = await supabase.rpc("owner_grant_admin", { p_user_id: userId });
             setBusy(false);
-            await refresh(error ? "Не удалось выдать администратора" : "Права администратора выданы");
+            await refresh(error ? `Не удалось выдать администратора: ${error.message}` : "Права администратора выданы");
           }}
           onSupportPriority={setSupportPriority}
           onAssignCustom={async (userId, roleId) => {
