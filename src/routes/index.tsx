@@ -66,7 +66,7 @@ function HomePage() {
 
           <div className="relative hidden border-l border-border lg:flex lg:flex-col lg:justify-between p-8">
             <div>
-              <div className="text-[10px] font-extrabold uppercase tracking-[.24em] text-muted-foreground">GREET / AND / WIN</div>
+              <div className="text-[10px] font-extrabold uppercase tracking-[.24em] text-muted-foreground">RECORN</div>
               <div className="mt-8 font-display text-[140px] font-extrabold leading-none tracking-[-.1em] text-primary/10">RC</div>
             </div>
             <div className="border-t border-border pt-6">
