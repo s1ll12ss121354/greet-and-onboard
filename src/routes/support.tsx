@@ -46,7 +46,7 @@ function SupportPage() {
           </div>
 
           <a
-            href="https://dalink.to/t1she123"
+            href="https://www.donationalerts.com/r/t1she123"
             target="_blank"
             rel="noopener noreferrer nofollow"
             aria-label="Открыть страницу поддержки RECORN"
