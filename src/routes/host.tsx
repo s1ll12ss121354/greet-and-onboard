@@ -6,8 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/host")({
   head: () => ({ meta: [
-    { title: "Хост — ReCorN" },
-    { name: "description", content: "Подайте заявку на роль хоста ReCorN." },
+    { title: "Хост — GreetAndWin" },
+    { name: "description", content: "Подайте заявку на роль хоста GreetAndWin." },
   ]}),
   component: HostPage,
 });
@@ -116,7 +116,7 @@ function HostPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
-        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-primary"><Sparkles className="size-4" /> ReCorN Host</span>
+        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-primary"><Sparkles className="size-4" /> GreetAndWin Host</span>
         <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">Стань хостом.</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">Помогай проводить честные матчи Block Strike и поддерживай соревновательную сцену.</p>
       </div>
@@ -134,8 +134,7 @@ function HostPage() {
         <label className="block"><span className="mb-2 block text-sm font-bold">Есть VIP?</span><select required value={vip} onChange={(e) => setVip(e.target.value)} className={input}><option value="">Выберите вариант</option><option value="yes">Да</option><option value="no">Нет</option></select></label>
         <div className="grid gap-4 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-sm font-bold">Discord</span><input value={discord} onChange={(e) => setDiscord(e.target.value)} placeholder="@username" className={input} /></label><label className="block"><span className="mb-2 block text-sm font-bold">Telegram</span><input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="@username" className={input} /></label></div>
         <p className="text-xs text-muted-foreground">Укажите хотя бы один контакт. Он доступен только администраторам при рассмотрении заявки.</p>
-        <div className="grid gap-4 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-sm font-bold">Discord</span><input value={discord} onChange={(e) => setDiscord(e.target.value)} placeholder="@username" className={input} /></label><label className="block"><span className="mb-2 block text-sm font-bold">Telegram</span><input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="@username" className={input} /></label></div>
-        <p className="text-xs text-muted-foreground">Укажите хотя бы один контакт. Он доступен только администраторам при рассмотрении заявки.</p>
+
         <label className="block"><span className="mb-2 block text-sm font-bold">Почему именно вы?</span><textarea required minLength={20} rows={6} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Расскажите об опыте, возрасте, часах игры и почему вам можно доверить матч." className={input} /></label>
         <div className="rounded-2xl border border-border bg-background/60 p-5">
           <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" /><div><p className="font-bold">Правила хоста</p><ul className="mt-2 space-y-1 text-sm text-muted-foreground"><li>• не подсказывать игрокам;</li><li>• следить за честной игрой;</li><li>• оставаться нейтральным.</li></ul></div></div>
