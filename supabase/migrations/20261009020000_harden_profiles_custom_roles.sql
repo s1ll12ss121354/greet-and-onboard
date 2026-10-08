@@ -1,0 +1,291 @@
+-- ReCorN: harden profiles, custom_roles and user_custom_roles.
+-- Public profile data for a lobby is exposed only through a narrow RPC.
+-- Direct profile reads remain available to the current user and admins.
+
+-- ============================================================================
+-- PROFILES
+-- ============================================================================
+
+alter table public.profiles enable row level security;
+
+-- No anonymous access to profiles. Authenticated users can read only their
+-- own profile or profiles when they are an admin.
+revoke select, insert, delete on public.profiles from anon, authenticated;
+grant select, update on public.profiles to authenticated;
+
+drop policy if exists "Profiles are public" on public.profiles;
+drop policy if exists "Authenticated users can read profiles" on public.profiles;
+drop policy if exists "Users admins and lobby members can read profiles" on public.profiles;
+
+create policy "Users and admins read profiles"
+on public.profiles
+for select
+to authenticated
+using (
+  id = (select auth.uid())
+  or public.has_role((select auth.uid()), 'admin')
+);
+
+drop policy if exists "Admins update profiles" on public.profiles;
+
+create policy "Admins update profiles"
+on public.profiles
+for update
+to authenticated
+using (public.has_role((select auth.uid()), 'admin'))
+with check (public.has_role((select auth.uid()), 'admin'));
+
+-- A defense-in-depth trigger prevents future broad UPDATE grants from turning
+-- into self-service ELO, ban, priority, or identity changes.
+create or replace function public.protect_profile_mutations()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := (select auth.uid());
+begin
+  -- Trusted server-side operations.
+  if current_setting('recorn.match_result', true) = '1'
+     or current_setting('recorn.presence', true) = '1'
+     or current_setting('recorn.profile_internal', true) = '1' then
+    return new;
+  end if;
+
+  -- Administrators use dedicated server-side RPCs / admin panel.
+  if uid is not null
+     and public.has_role(uid, 'admin') then
+    return new;
+  end if;
+
+  -- Defensive lock for non-admin callers.
+  if new.id is distinct from old.id
+     or new.nickname is distinct from old.nickname
+     or new.created_at is distinct from old.created_at
+     or new.elo is distinct from old.elo
+     or new.wins is distinct from old.wins
+     or new.losses is distinct from old.losses
+     or new.banned is distinct from old.banned
+     or new.ban_until is distinct from old.ban_until
+     or new.ban_reason is distinct from old.ban_reason
+     or new.support_priority is distinct from old.support_priority
+     or new.last_seen_at is distinct from old.last_seen_at then
+    raise exception 'PROFILE_FIELDS_PROTECTED';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_profile_self_update on public.profiles;
+drop trigger if exists protect_profile_competitive_fields on public.profiles;
+drop trigger if exists protect_profile_mutations on public.profiles;
+
+create trigger protect_profile_mutations
+before update on public.profiles
+for each row
+execute function public.protect_profile_mutations();
+
+-- Presence must use a transaction-local trusted flag because last_seen_at is
+-- intentionally not writable from the client Data API.
+create or replace function public.touch_presence()
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := (select auth.uid());
+begin
+  if uid is null then
+    raise exception 'AUTH_REQUIRED';
+  end if;
+
+  perform set_config('recorn.presence', '1', true);
+
+  update public.profiles
+  set last_seen_at = now()
+  where id = uid;
+
+  if not found then
+    raise exception 'PROFILE_NOT_FOUND';
+  end if;
+
+  return true;
+end;
+$$;
+
+revoke all on function public.touch_presence() from public, anon;
+grant execute on function public.touch_presence() to authenticated;
+
+-- Safe lobby profile endpoint. Only participants of the lobby can call it.
+-- It intentionally returns no banned/support_priority/ban fields.
+create or replace function public.lobby_public_profiles(p_lobby_id uuid)
+returns table (
+  id uuid,
+  nickname text,
+  elo integer,
+  wins integer,
+  losses integer,
+  avatar_url text,
+  banner_url text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    p.id,
+    p.nickname,
+    p.elo,
+    p.wins,
+    p.losses,
+    p.avatar_url,
+    p.banner_url
+  from public.profiles p
+  join public.match_lobby_members lm
+    on lm.user_id = p.id
+   and lm.lobby_id = p_lobby_id
+  where exists (
+    select 1
+    from public.match_lobby_members mine
+    where mine.lobby_id = p_lobby_id
+      and mine.user_id = (select auth.uid())
+  )
+  order by lm.joined_at, p.nickname;
+$$;
+
+revoke all on function public.lobby_public_profiles(uuid) from public, anon;
+grant execute on function public.lobby_public_profiles(uuid) to authenticated;
+
+-- ============================================================================
+-- CUSTOM ROLES
+-- ============================================================================
+
+alter table public.custom_roles enable row level security;
+alter table public.user_custom_roles enable row level security;
+
+-- Custom roles are admin configuration. Nobody can mutate these tables through
+-- the Data API; the admin RPCs are the only supported write interface.
+revoke all on public.custom_roles from public, anon, authenticated;
+revoke all on public.user_custom_roles from public, anon, authenticated;
+
+grant select on public.custom_roles to authenticated;
+grant select on public.user_custom_roles to authenticated;
+
+drop policy if exists "Authenticated read custom roles" on public.custom_roles;
+drop policy if exists "Admins read custom roles" on public.custom_roles;
+
+create policy "Admins read custom roles"
+on public.custom_roles
+for select
+to authenticated
+using (
+  public.has_role((select auth.uid()), 'admin')
+);
+
+drop policy if exists "Authenticated read user custom roles" on public.user_custom_roles;
+drop policy if exists "Users and admins read custom role assignments" on public.user_custom_roles;
+
+create policy "Users and admins read custom role assignments"
+on public.user_custom_roles
+for select
+to authenticated
+using (
+  user_id = (select auth.uid())
+  or public.has_role((select auth.uid()), 'admin')
+);
+
+-- Defense-in-depth: even if someone later adds table grants, direct writes
+-- still require admin authority and cannot transfer ownership of a role row.
+create or replace function public.protect_custom_role_writes()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := (select auth.uid());
+begin
+  if uid is null or not public.has_role(uid, 'admin') then
+    raise exception 'ADMIN_ONLY';
+  end if;
+
+  if tg_op = 'INSERT' then
+    if new.created_by <> uid then
+      raise exception 'ROLE_CREATOR_MISMATCH';
+    end if;
+  elsif tg_op = 'UPDATE' then
+    if new.id is distinct from old.id
+       or new.created_by is distinct from old.created_by then
+      raise exception 'ROLE_ID_PROTECTED';
+    end if;
+  end if;
+
+  return case
+    when tg_op = 'DELETE' then old
+    else new
+  end;
+end;
+$$;
+
+drop trigger if exists protect_custom_role_writes on public.custom_roles;
+
+create trigger protect_custom_role_writes
+before insert or update or delete on public.custom_roles
+for each row
+execute function public.protect_custom_role_writes();
+
+create or replace function public.protect_user_custom_role_writes()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := (select auth.uid());
+begin
+  if uid is null or not public.has_role(uid, 'admin') then
+    raise exception 'ADMIN_ONLY';
+  end if;
+
+  if tg_op = 'INSERT' then
+    if new.user_id is null or new.role_id is null then
+      raise exception 'INVALID_CUSTOM_ROLE_ASSIGNMENT';
+    end if;
+  elsif tg_op = 'UPDATE' then
+    if new.id is distinct from old.id
+       or new.user_id is distinct from old.user_id
+       or new.role_id is distinct from old.role_id then
+      raise exception 'CUSTOM_ROLE_ASSIGNMENT_ID_PROTECTED';
+    end if;
+  end if;
+
+  return case
+    when tg_op = 'DELETE' then old
+    else new
+  end;
+end;
+$$;
+
+drop trigger if exists protect_user_custom_role_writes on public.user_custom_roles;
+
+create trigger protect_user_custom_role_writes
+before insert or update or delete on public.user_custom_roles
+for each row
+execute function public.protect_user_custom_role_writes();
+
+-- Only the approved admin RPCs are allowed to mutate the custom-role tables.
+revoke execute on function public.admin_create_custom_role(text,text,text) from public, anon;
+revoke execute on function public.admin_assign_custom_role(uuid,uuid) from public, anon;
+revoke execute on function public.admin_remove_custom_role(uuid,uuid) from public, anon;
+revoke execute on function public.admin_delete_custom_role(uuid) from public, anon;
+
+grant execute on function public.admin_create_custom_role(text,text,text) to authenticated;
+grant execute on function public.admin_assign_custom_role(uuid,uuid) to authenticated;
+grant execute on function public.admin_remove_custom_role(uuid,uuid) to authenticated;
+grant execute on function public.admin_delete_custom_role(uuid) to authenticated;
+
+notify pgrst, 'reload schema';
