@@ -70,7 +70,7 @@ function MatchmakingPage() {
   const [resultOpen, setResultOpen] = useState(false);
   const [resultBusy, setResultBusy] = useState(false);
   const [resultScreenshot, setResultScreenshot] = useState<File | null>(null);
-  const [resultStats, setResultStats] = useState<Record<string, { kills: number; deaths: number; won: boolean }>>({});
+  const [resultStats, setResultStats] = useState<Record<string, { kills: number; deaths: number; won: boolean; participated: boolean }>>({});
 
   const staff = roles.some((r) => ["host","moderator","admin"].includes(r));
   const isOwner = profile?.nickname.trim().toLowerCase() === "isy_hesy09";
@@ -269,7 +269,8 @@ function MatchmakingPage() {
     if (!lobby || lobby.host_user_id !== user.id || resultBusy) return;
     if (!resultScreenshot) { setError("Загрузите скриншот результата хоста."); return; }
     const playerRows = members.filter((m) => m.member_kind === "player");
-    if (playerRows.length < 2) { setError("В матче недостаточно игроков."); return; }
+    const participants = playerRows.filter((m) => resultStats[m.user_id]?.participated !== false);
+    if (participants.length < 2) { setError("Должно быть минимум 2 игрока, которые реально зашли на сервер."); return; }
     setResultBusy(true); setError("");
     try {
       let screenshotPath = "";
@@ -286,6 +287,7 @@ function MatchmakingPage() {
         kills: Math.max(0, Math.floor(resultStats[m.user_id]?.kills ?? 0)),
         deaths: Math.max(0, Math.floor(resultStats[m.user_id]?.deaths ?? 0)),
         won: Boolean(resultStats[m.user_id]?.won),
+        participated: resultStats[m.user_id]?.participated !== false,
       }));
       const { error: e } = await supabase.rpc("submit_match_result", {
         p_lobby_id: lobby.id, p_screenshot_path: screenshotPath || null, p_players: payload,
@@ -427,7 +429,7 @@ function MatchmakingPage() {
               </div>
             )}
 
-            {lobby.host_user_id === user.id && lobby.player_count >= 10 && (
+            {lobby.host_user_id === user.id && lobby.status === "in_game" && lobby.player_count >= 2 && (
               <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><div className="font-bold">Результат матча</div><div className="mt-1 text-xs text-muted-foreground">Загрузите скрин хоста и перенесите K/D. ELO посчитает сервер.</div></div>
@@ -470,20 +472,44 @@ function MatchmakingPage() {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
         <div className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-2xl">
           <h2 className="font-display text-xl font-bold">Результат матча</h2>
-          <p className="mt-1 text-sm text-muted-foreground">K/D берётся со скрина хоста. Изменение ELO рассчитывается сервером.</p>
+          <p className="mt-1 text-sm text-muted-foreground">K/D берётся со скрина хоста. Отметьте игроков, которые не зашли на сервер — они не получат WIN/LOSS и изменение ELO.</p>
           <label className="mt-4 block text-sm font-semibold">Скриншот (PNG/JPG/WEBP, до 5 МБ)
             <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setResultScreenshot(e.target.files?.[0] ?? null)} className="mt-2 block w-full rounded-xl border border-border bg-background p-3 text-sm" />
           </label>
           <div className="mt-5 space-y-2">
             {members.filter((m) => m.member_kind === "player").map((m) => {
               const p = players.find((x) => x.id === m.user_id);
-              const s = resultStats[m.user_id] ?? { kills: 0, deaths: 0, won: false };
-              const kd = (s.kills / Math.max(s.deaths, 1)).toFixed(2);
-              return <div key={m.user_id} className="grid grid-cols-[1fr_64px_64px_auto] items-center gap-2 rounded-xl border border-border p-3">
-                <div className="min-w-0"><div className="truncate text-sm font-bold">{p?.nickname ?? "Player"}</div><div className="text-xs text-muted-foreground">K/D: {kd}</div></div>
-                <input type="number" min="0" max="999" value={s.kills} onChange={(e) => setResultStats(v => ({...v,[m.user_id]:{...s,kills:Number(e.target.value)}}))} className="w-full rounded-lg border border-input bg-background px-2 py-2 text-sm" />
-                <input type="number" min="0" max="999" value={s.deaths} onChange={(e) => setResultStats(v => ({...v,[m.user_id]:{...s,deaths:Number(e.target.value)}}))} className="w-full rounded-lg border border-input bg-background px-2 py-2 text-sm" />
-                <label className="flex items-center gap-1 text-xs font-bold"><input type="checkbox" checked={s.won} onChange={(e) => setResultStats(v => ({...v,[m.user_id]:{...s,won:e.target.checked}}))} /> WIN</label>
+              const s = resultStats[m.user_id] ?? { kills: 0, deaths: 0, won: false, participated: true };
+              const kd = s.participated ? (s.kills / Math.max(s.deaths, 1)).toFixed(2) : "—";
+              return <div key={m.user_id} className="space-y-2 rounded-xl border border-border p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-bold">{p?.nickname ?? "Player"}</div>
+                    <div className="text-xs text-muted-foreground">{s.participated ? `K/D: ${kd}` : "Не зашёл на сервер — ELO не изменится"}</div>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-bold">
+                    <input
+                      type="checkbox"
+                      checked={!s.participated}
+                      onChange={(e) => setResultStats(v => ({
+                        ...v,
+                        [m.user_id]: { ...s, participated: !e.target.checked }
+                      }))}
+                    />
+                    Не зашёл на сервер
+                  </label>
+                </div>
+                {s.participated && (
+                  <div className="grid grid-cols-[1fr_64px_64px_auto] items-center gap-2">
+                    <div className="text-xs text-muted-foreground">Статистика</div>
+                    <input type="number" min="0" max="999" value={s.kills} onChange={(e) => setResultStats(v => ({...v,[m.user_id]:{...s,kills:Number(e.target.value)}}))} className="w-full rounded-lg border border-input bg-background px-2 py-2 text-sm" />
+                    <input type="number" min="0" max="999" value={s.deaths} onChange={(e) => setResultStats(v => ({...v,[m.user_id]:{...s,deaths:Number(e.target.value)}}))} className="w-full rounded-lg border border-input bg-background px-2 py-2 text-sm" />
+                    <label className="flex items-center justify-end gap-1 text-xs font-bold">
+                      <input type="checkbox" checked={s.won} onChange={(e) => setResultStats(v => ({...v,[m.user_id]:{...s,won:e.target.checked}}))} />
+                      WIN
+                    </label>
+                  </div>
+                )}
               </div>;
             })}
           </div>
