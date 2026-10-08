@@ -7,6 +7,9 @@ import {
   Flag,
   Shield,
   Crosshair,
+  Sparkles,
+  Crown,
+  LogIn,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +18,9 @@ const NAV_ITEMS = [
   { to: "/history", label: "История", icon: History },
   { to: "/profile", label: "Профиль", icon: User },
   { to: "/players", label: "Найти игрока", icon: Search },
+  { to: "/coach", label: "AI-тренер", icon: Sparkles },
+  { to: "/host", label: "Заявка на хоста", icon: Crown },
+  { to: "/auth", label: "Вход", icon: LogIn },
   { to: "/reports", label: "Жалобы", icon: Flag },
   { to: "/admin", label: "Админ-панель", icon: Shield },
 ] as const;

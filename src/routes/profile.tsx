@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Trophy,
   Skull,
@@ -21,24 +23,24 @@ export const Route = createFileRoute("/profile")({
   component: ProfilePage,
 });
 
-const PLAYER = {
-  nickname: "isy_hesy09",
-  level: 0,
-  elo: 0,
-  wins: 0,
-  losses: 0,
-  winRate: 0,
-  matches: 0,
-};
-
-const STATS = [
-  { label: "Победы", value: PLAYER.wins, icon: Trophy, valueClass: "text-success" },
-  { label: "Поражения", value: PLAYER.losses, icon: Skull, valueClass: "text-destructive" },
-  { label: "Win Rate", value: `${PLAYER.winRate}%`, icon: Percent, valueClass: "text-foreground" },
-  { label: "Матчи", value: PLAYER.matches, icon: Gamepad2, valueClass: "text-foreground" },
-];
-
 function ProfilePage() {
+  const { profile, roles, loading, user } = useAuth();
+  if (loading) return <div className="text-muted-foreground">Загрузка...</div>;
+  if (!user || !profile)
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border border-border bg-card p-8 text-center">
+        <p>Войдите или зарегистрируйтесь по нику Roblox.</p>
+        <Link to="/auth" className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Войти</Link>
+      </div>
+    );
+  const matches = profile.wins + profile.losses;
+  const PLAYER = { nickname: profile.nickname, level: Math.floor(profile.elo / 100), elo: profile.elo, wins: profile.wins, losses: profile.losses, matches, winRate: matches ? Math.round((profile.wins / matches) * 100) : 0 };
+  const STATS = [
+    { label: "Победы", value: PLAYER.wins, icon: Trophy, valueClass: "text-success" },
+    { label: "Поражения", value: PLAYER.losses, icon: Skull, valueClass: "text-destructive" },
+    { label: "Win Rate", value: `${PLAYER.winRate}%`, icon: Percent, valueClass: "text-foreground" },
+    { label: "Матчи", value: PLAYER.matches, icon: Gamepad2, valueClass: "text-foreground" },
+  ];
   return (
     <div className="mx-auto max-w-5xl">
       <section className="banner-gradient overflow-hidden rounded-2xl border border-border">
@@ -62,6 +64,10 @@ function ProfilePage() {
                 Профиль Block Strike
                 <ExternalLink className="size-3.5" />
               </a>
+              <div className="mt-1 flex gap-2 text-xs">
+                {roles.map((r) => <span key={r} className="rounded bg-primary/15 px-2 py-0.5 font-bold uppercase text-primary">{r}</span>)}
+                <button onClick={() => supabase.auth.signOut()} className="text-muted-foreground hover:text-destructive">Выйти</button>
+              </div>
             </div>
           </div>
           <div className="flex flex-1 flex-wrap items-center justify-between gap-4">
