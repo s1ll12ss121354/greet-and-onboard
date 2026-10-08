@@ -21,11 +21,12 @@ function MatchFoundPage() {
   const [hostUserId, setHostUserId] = useState<string | null>(null);
   const [loadingHost, setLoadingHost] = useState(true);
 
-  const { queryHost, lobbyId } = useMemo(() => {
-    if (typeof window === "undefined") return { queryHost: "", lobbyId: "" };
+  const { queryHost, queryHostId, lobbyId } = useMemo(() => {
+    if (typeof window === "undefined") return { queryHost: "", queryHostId: "", lobbyId: "" };
     const params = new URLSearchParams(window.location.search);
     return {
       queryHost: params.get("host")?.trim() ?? "",
+      queryHostId: params.get("host_id")?.trim() ?? "",
       lobbyId:
         params.get("lobby")?.trim() ??
         window.sessionStorage.getItem("recorn-lobby")?.trim() ??
@@ -41,15 +42,23 @@ function MatchFoundPage() {
         typeof window !== "undefined"
           ? window.sessionStorage.getItem("recorn-match-host")?.trim() ?? ""
           : "";
+      const sessionHostId =
+        typeof window !== "undefined"
+          ? window.sessionStorage.getItem("recorn-match-host-id")?.trim() ?? ""
+          : "";
 
       if (queryHost) {
         setHost(queryHost);
+        if (queryHostId) setHostUserId(queryHostId);
+        else if (queryHost === profile?.nickname?.trim()) setHostUserId(user?.id ?? null);
         setLoadingHost(false);
         return;
       }
 
       if (sessionHost) {
         setHost(sessionHost);
+        if (sessionHostId) setHostUserId(sessionHostId);
+        else if (sessionHost === profile?.nickname?.trim()) setHostUserId(user?.id ?? null);
         setLoadingHost(false);
         return;
       }
@@ -112,7 +121,7 @@ function MatchFoundPage() {
     return () => {
       cancelled = true;
     };
-  }, [lobbyId, profile?.nickname, queryHost, user?.id]);
+  }, [lobbyId, profile?.nickname, queryHost, queryHostId, user?.id]);
 
   async function copyHost() {
     if (!host || !navigator.clipboard) return;
