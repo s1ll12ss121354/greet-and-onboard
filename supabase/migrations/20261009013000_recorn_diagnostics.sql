@@ -392,7 +392,7 @@ begin
     x.details
   from (
     values
-      ('public','profiles','Users admins and lobby members can read profiles','Profile read access is intentionally scoped.'),
+      ('public','profiles','Users and admins read profiles','Profile read access is restricted to self/admin; lobby access uses a safe RPC.'),
       ('public','profiles','Admins update profiles','Competitive fields require server/admin control.'),
       ('public','match_lobbies','Lobby members can read their lobby','Lobby visibility should be scoped to participants.'),
       ('public','match_lobby_members','Lobby members can read lobby roster','Roster visibility should be scoped.'),
