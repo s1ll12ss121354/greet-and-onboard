@@ -33,6 +33,10 @@ function HostPage() {
     e.preventDefault();
     if (!user || !profile || sending) return;
     setErr("");
+    if (!discord.trim() && !telegram.trim()) {
+      setErr("Укажите Discord или Telegram для связи с администрацией.");
+      return;
+    }
     setSending(true);
 
     const { data: existing, error: existingError } = await supabase
