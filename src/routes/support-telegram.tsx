@@ -4,8 +4,8 @@ import { ArrowLeft, Send, ShieldCheck } from "lucide-react";
 export const Route = createFileRoute("/support-telegram")({
   head: () => ({
     meta: [
-      { title: "Техподдержка — GreetAndWin" },
-      { name: "description", content: "Техническая поддержка GreetAndWin в Telegram." },
+      { title: "Техподдержка — RECORN" },
+      { name: "description", content: "Техническая поддержка RECORN в Telegram." },
     ],
   }),
   component: SupportTelegramPage,
