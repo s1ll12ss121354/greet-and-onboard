@@ -88,6 +88,7 @@ export type Database = {
           id: string
           losses: number
           nickname: string
+          last_seen_at: string | null
           wins: number
         }
         Insert: {
@@ -97,6 +98,7 @@ export type Database = {
           id: string
           losses?: number
           nickname: string
+          last_seen_at?: string | null
           wins?: number
         }
         Update: {
