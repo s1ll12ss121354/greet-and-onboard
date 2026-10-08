@@ -92,3 +92,6 @@ as $$
 $$;
 
 grant execute on function public.mm_open_lobbies() to authenticated;
+
+-- PostgREST caches RPC signatures; force a schema reload after restoring the functions.
+notify pgrst, 'reload schema';
