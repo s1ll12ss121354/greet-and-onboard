@@ -4,10 +4,10 @@ import { History } from "lucide-react";
 export const Route = createFileRoute("/history")({
   head: () => ({
     meta: [
-      { title: "История — ReCorN" },
-      { name: "description", content: "История ваших матчей и действий на ReCorN." },
-      { property: "og:title", content: "История — ReCorN" },
-      { property: "og:description", content: "История ваших матчей и действий на ReCorN." },
+      { title: "История — GreetAndWin" },
+      { name: "description", content: "История ваших матчей и действий на GreetAndWin." },
+      { property: "og:title", content: "История — GreetAndWin" },
+      { property: "og:description", content: "История ваших матчей и действий на GreetAndWin." },
     ],
   }),
   component: HistoryPage,
