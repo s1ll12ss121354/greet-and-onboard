@@ -457,7 +457,8 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
-        mm_create_lobby: {
+      }
+      mm_create_lobby: {
           Args: Record<PropertyKey, never>
           Returns: string
         }
