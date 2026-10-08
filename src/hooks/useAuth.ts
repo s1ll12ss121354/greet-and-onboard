@@ -12,6 +12,7 @@ export type Profile = {
   wins: number;
   losses: number;
   banned: boolean;
+  support_priority: boolean;
 };
 
 export function useAuth() {
