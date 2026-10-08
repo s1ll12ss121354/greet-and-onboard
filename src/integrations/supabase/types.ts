@@ -48,6 +48,7 @@ export type Database = {
           discord_contact: string | null
           has_vip: boolean
           id: string
+          priority: boolean
           reason: string
           roblox_nick: string
           status: string
@@ -60,6 +61,7 @@ export type Database = {
           discord_contact?: string | null
           has_vip: boolean
           id?: string
+          priority?: boolean
           reason: string
           roblox_nick: string
           status?: string
@@ -72,6 +74,7 @@ export type Database = {
           discord_contact?: string | null
           has_vip?: boolean
           id?: string
+          priority?: boolean
           reason?: string
           roblox_nick?: string
           status?: string
@@ -89,6 +92,7 @@ export type Database = {
           losses: number
           nickname: string
           last_seen_at: string | null
+          support_priority: boolean
           wins: number
         }
         Insert: {
@@ -99,6 +103,7 @@ export type Database = {
           losses?: number
           nickname: string
           last_seen_at?: string | null
+          support_priority?: boolean
           wins?: number
         }
         Update: {
