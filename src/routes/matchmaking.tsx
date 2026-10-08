@@ -60,6 +60,10 @@ function MatchmakingPage() {
   const [notifications, setNotifications] = useState<{id:string; message:string}[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [resultOpen, setResultOpen] = useState(false);
+  const [resultBusy, setResultBusy] = useState(false);
+  const [resultScreenshot, setResultScreenshot] = useState<File | null>(null);
+  const [resultStats, setResultStats] = useState<Record<string, { kills: number; deaths: number; won: boolean }>>({});
 
   const staff = roles.some((r) => ["host","moderator","admin"].includes(r));
 
@@ -181,6 +185,40 @@ function MatchmakingPage() {
     loadOpen();
   }
 
+  async function submitResult() {
+    if (!lobby || lobby.host_user_id !== user.id || resultBusy) return;
+    const playerRows = members.filter((m) => m.member_kind === "player");
+    if (playerRows.length < 2) { setError("В матче недостаточно игроков."); return; }
+    setResultBusy(true); setError("");
+    try {
+      let screenshotPath = "";
+      if (resultScreenshot) {
+        if (!["image/png","image/jpeg","image/webp"].includes(resultScreenshot.type)) throw new Error("Можно загрузить только PNG, JPG или WEBP.");
+        if (resultScreenshot.size > 5 * 1024 * 1024) throw new Error("Скриншот должен быть не больше 5 МБ.");
+        const ext = resultScreenshot.name.split(".").pop()?.toLowerCase() || "png";
+        screenshotPath = user.id + "/" + lobby.id + "." + ext;
+        const up = await supabase.storage.from("match-screenshots").upload(screenshotPath, resultScreenshot, { upsert: true, contentType: resultScreenshot.type });
+        if (up.error) throw up.error;
+      }
+      const payload = playerRows.map((m) => ({
+        user_id: m.user_id,
+        kills: Math.max(0, Math.floor(resultStats[m.user_id]?.kills ?? 0)),
+        deaths: Math.max(0, Math.floor(resultStats[m.user_id]?.deaths ?? 0)),
+        won: Boolean(resultStats[m.user_id]?.won),
+      }));
+      const { error: e } = await supabase.rpc("submit_match_result", {
+        p_lobby_id: lobby.id, p_screenshot_path: screenshotPath || null, p_players: payload,
+      });
+      if (e) throw e;
+      window.sessionStorage.removeItem("recorn-lobby");
+      setLobby(null); setMembers([]); setPlayers([]); setResultOpen(false); setResultScreenshot(null); setResultStats({});
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось сохранить результат матча.");
+    } finally {
+      setResultBusy(false);
+    }
+  }
+
   async function markNotification(id: string) {
     await supabase.from("host_notifications").update({status:"read"}).eq("id",id);
     loadNotifications();
@@ -268,6 +306,14 @@ function MatchmakingPage() {
               <div className="mt-5 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm">{t.noHost}</div>
             )}
 
+            {lobby.host_user_id === user.id && lobby.player_count >= 2 && (
+              <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div><div className="font-bold">Результат матча</div><div className="mt-1 text-xs text-muted-foreground">Загрузите скрин хоста и перенесите K/D. ELO посчитает сервер.</div></div>
+                  <button onClick={() => setResultOpen(true)} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Внести результат</button>
+                </div>
+              </div>
+            )}
             <button disabled={busy} onClick={leaveLobby} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-destructive/30 px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><X className="size-4"/>{t.leave}</button>
           </div>
 
@@ -290,6 +336,35 @@ function MatchmakingPage() {
           </div>
         </section>
       )}
-    </div>
+    {resultOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+        <div className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-2xl">
+          <h2 className="font-display text-xl font-bold">Результат матча</h2>
+          <p className="mt-1 text-sm text-muted-foreground">K/D берётся со скрина хоста. Изменение ELO рассчитывается сервером.</p>
+          <label className="mt-4 block text-sm font-semibold">Скриншот (PNG/JPG/WEBP, до 5 МБ)
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setResultScreenshot(e.target.files?.[0] ?? null)} className="mt-2 block w-full rounded-xl border border-border bg-background p-3 text-sm" />
+          </label>
+          <div className="mt-5 space-y-2">
+            {members.filter((m) => m.member_kind === "player").map((m) => {
+              const p = players.find((x) => x.id === m.user_id);
+              const s = resultStats[m.user_id] ?? { kills: 0, deaths: 0, won: false };
+              const kd = (s.kills / Math.max(s.deaths, 1)).toFixed(2);
+              return <div key={m.user_id} className="grid grid-cols-[1fr_64px_64px_auto] items-center gap-2 rounded-xl border border-border p-3">
+                <div className="min-w-0"><div className="truncate text-sm font-bold">{p?.nickname ?? "Player"}</div><div className="text-xs text-muted-foreground">K/D: {kd}</div></div>
+                <input type="number" min="0" max="999" value={s.kills} onChange={(e) => setResultStats(v => ({...v,[m.user_id]:{...s,kills:Number(e.target.value)}}))} className="w-full rounded-lg border border-input bg-background px-2 py-2 text-sm" />
+                <input type="number" min="0" max="999" value={s.deaths} onChange={(e) => setResultStats(v => ({...v,[m.user_id]:{...s,deaths:Number(e.target.value)}}))} className="w-full rounded-lg border border-input bg-background px-2 py-2 text-sm" />
+                <label className="flex items-center gap-1 text-xs font-bold"><input type="checkbox" checked={s.won} onChange={(e) => setResultStats(v => ({...v,[m.user_id]:{...s,won:e.target.checked}}))} /> WIN</label>
+              </div>;
+            })}
+          </div>
+          <div className="mt-4 rounded-xl border border-border bg-background/50 p-3 text-xs text-muted-foreground">ELO: ±20 за WIN/LOSS + бонус K/D, итог от −50 до +50 ELO.</div>
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button disabled={resultBusy} onClick={() => setResultOpen(false)} className="rounded-xl bg-secondary px-4 py-2 text-sm font-bold">Отмена</button>
+            <button disabled={resultBusy} onClick={submitResult} className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">{resultBusy ? "Сохраняем…" : "Сохранить результат"}</button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
   );
 }
