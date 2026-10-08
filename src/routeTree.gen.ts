@@ -75,8 +75,6 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/matchmaking': typeof MatchmakingRoute
-  '/matchmaking': typeof MatchmakingRoute
-  '/matchmaking': typeof MatchmakingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -205,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/matchmaking': {
+      id: '/matchmaking'
+      path: '/matchmaking'
+      fullPath: '/matchmaking'
+      preLoaderRoute: typeof MatchmakingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -217,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlayersRoute: PlayersRoute,
   ProfileRoute: ProfileRoute,
   ReportsRoute: ReportsRoute,
+  MatchmakingRoute: MatchmakingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
