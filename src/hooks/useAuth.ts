@@ -21,7 +21,22 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data } = supabase.auth.onAuthStateChange(async (event, s) => {
+      setSession(s);
+      if (event === "SIGNED_IN" && s?.user) {
+        const ua = navigator.userAgent;
+        const device = /Mobi|Android/i.test(ua) ? "mobile" : /Tablet|iPad/i.test(ua) ? "tablet" : "desktop";
+        const browser = /Edg\//i.test(ua) ? "Edge" : /Chrome\//i.test(ua) ? "Chrome" : /Firefox\//i.test(ua) ? "Firefox" : /Safari\//i.test(ua) ? "Safari" : "Other";
+        const os = /Windows/i.test(ua) ? "Windows" : /Android/i.test(ua) ? "Android" : /iPhone|iPad|iPod/i.test(ua) ? "iOS" : /Mac OS/i.test(ua) ? "macOS" : /Linux/i.test(ua) ? "Linux" : "Other";
+        await supabase.from("security_login_events").insert({
+          user_id: s.user.id,
+          device_category: device,
+          browser,
+          os,
+          ip_hash: null,
+        });
+      }
+    });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       if (!data.session) setLoading(false);
