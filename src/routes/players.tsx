@@ -38,14 +38,10 @@ function PlayersPage() {
 
   useEffect(() => {
     let active = true;
-    supabase.from("profiles")
-      .select("id,nickname,elo,wins,losses,banned,ban_until")
-      .order("elo", { ascending: false })
-      .order("wins", { ascending: false })
-      .limit(100)
+    supabase.rpc("public_leaderboard", { p_limit: 100 })
       .then(({ data }) => {
         if (active) {
-          setPlayers(((data as Player[]) ?? []).filter((p) => !p.banned || (p.ban_until && new Date(p.ban_until).getTime() <= Date.now())));
+          setPlayers((data as Player[]) ?? []);
           setLoading(false);
         }
       });
