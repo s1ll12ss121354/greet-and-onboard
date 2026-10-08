@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Crosshair, Trophy, Users, Swords, Crown, Zap } from "lucide-react";
+import { ArrowRight, Crosshair, Trophy, Users, Swords, Crown, Zap, Heart } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -28,6 +28,7 @@ function HomePage() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link to="/players" className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20">Найти игроков <ArrowRight className="size-4"/></Link>
           <Link to="/host" className="inline-flex items-center gap-2 rounded-xl border border-border bg-secondary/60 px-6 py-3.5 text-sm font-bold transition hover:bg-secondary"><Crown className="size-4"/> Стать хостом</Link>
+          <Link to="/support" className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-6 py-3.5 text-sm font-bold text-primary transition hover:bg-primary/10"><Heart className="size-4"/> Поддержать проект</Link>
         </div>
       </div>
       <div className="relative mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
