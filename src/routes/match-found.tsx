@@ -18,6 +18,7 @@ function MatchFoundPage() {
   const { user, profile } = useAuth();
   const [copied, setCopied] = useState(false);
   const [host, setHost] = useState("");
+  const [hostUserId, setHostUserId] = useState<string | null>(null);
   const [loadingHost, setLoadingHost] = useState(true);
 
   const { queryHost, lobbyId } = useMemo(() => {
@@ -67,6 +68,7 @@ function MatchFoundPage() {
       if (cancelled) return;
 
       if (lobby?.host_user_id) {
+        setHostUserId(lobby.host_user_id);
         const { data: hostProfile } = await supabase
           .from("profiles")
           .select("nickname")
@@ -96,6 +98,7 @@ function MatchFoundPage() {
 
         if (!cancelled && member) {
           setHost(profile.nickname.trim());
+          setHostUserId(user.id);
           setLoadingHost(false);
           return;
         }
@@ -154,6 +157,20 @@ function MatchFoundPage() {
                 <div className="mt-3 break-all font-display text-2xl font-bold">
                   {host}
                 </div>
+                {hostUserId === user?.id && (
+                  <button
+                    onClick={() => {
+                      if (lobbyId) {
+                        window.location.assign("/matchmaking?results=1&lobby=" + encodeURIComponent(lobbyId));
+                      } else {
+                        window.location.assign("/matchmaking?results=1");
+                      }
+                    }}
+                    className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-extrabold text-primary-foreground hover:opacity-90"
+                  >
+                    Внести результат матча
+                  </button>
+                }
                 <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
                   <button
                     onClick={copyHost}
