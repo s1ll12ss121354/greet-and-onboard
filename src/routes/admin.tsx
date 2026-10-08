@@ -160,26 +160,23 @@ function AdminPage() {
 
   async function decide(app: App, approve: boolean) {
     setBusy(true);
-    const { error } = await supabase.from("host_applications")
-      .update({ status: approve ? "approved" : "rejected" })
-      .eq("id", app.id);
-    if (!error && approve && !has(app.user_id, "host")) {
-      const roleResult = await supabase.from("user_roles").insert({ user_id: app.user_id, role: "host" });
-      if (roleResult.error) {
-        setMsg("Заявка обновлена, но роль хоста не выдана");
-        setBusy(false);
-        return;
-      }
-    }
-    await supabase.rpc("log_activity", {
-      p_event_type: approve ? "host_application_approved" : "host_application_rejected",
-      p_path: "/admin",
-      p_details: { application_id: app.id, applicant: app.roblox_nick },
+    const { error } = await supabase.rpc("admin_review_host_application", {
+      p_application_id: app.id,
+      p_approve: approve,
     });
     setBusy(false);
-    await refresh(approve ? `${app.roblox_nick} теперь хост` : "Заявка отклонена");
+    await refresh(error ? "Ошибка: не удалось обработать заявку" : approve ? app.roblox_nick + " теперь хост" : "Заявка отклонена");
   }
 
+  async function reviewReport(report: Report, status: "resolved" | "rejected") {
+    setBusy(true);
+    const { error } = await supabase.rpc("admin_set_report_status", {
+      p_report_id: report.id,
+      p_status: status,
+    });
+    setBusy(false);
+    await refresh(error ? "Ошибка: не удалось обработать жалобу" : status === "resolved" ? "Жалоба одобрена и закрыта" : "Жалоба отклонена");
+  }
   async function toggleRole(p: Profile, role: "moderator" | "host") {
     setBusy(true);
     const result = has(p.id, role)
@@ -292,6 +289,7 @@ function AdminPage() {
           busy={busy}
           onRequestBan={requestBan}
           onReviewBan={reviewBan}
+          onReviewReport={reviewReport}
           onRefresh={() => refresh()}
         />
       )}
@@ -345,6 +343,7 @@ function ReportsSection({
   busy,
   onRequestBan,
   onReviewBan,
+  onReviewReport,
   onRefresh,
 }: {
   reports: Report[];
@@ -353,6 +352,7 @@ function ReportsSection({
   busy: boolean;
   onRequestBan: (r: Report) => void;
   onReviewBan: (r: BanRequest, approve: boolean) => void;
+  onReviewReport: (r: Report, status: "resolved" | "rejected") => void;
   onRefresh: () => void;
 }) {
   const pending = banRequests.filter((x) => x.status === "pending");
@@ -397,11 +397,16 @@ function ReportsSection({
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">{report.reason} · {formatDate(report.created_at)} · {report.status}</div>
                 </div>
-                {!isAdmin && report.status === "open" && !pendingRequest && (
+                {isAdmin && report.status === "open" ? (
+                  <div className="flex gap-2">
+                    <button disabled={busy} onClick={() => onReviewReport(report, "resolved")} className={`${btn} bg-success text-success-foreground`}>Одобрить</button>
+                    <button disabled={busy} onClick={() => onReviewReport(report, "rejected")} className={`${btn} bg-destructive text-destructive-foreground`}>Отклонить</button>
+                  </div>
+                ) : !isAdmin && report.status === "open" && !pendingRequest ? (
                   <button disabled={busy} onClick={() => onRequestBan(report)} className={`${btn} bg-destructive text-destructive-foreground`}>
                     Запросить бан
                   </button>
-                )}
+                ) : null}
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{report.details || "Без дополнительного описания."}</p>
               {pendingRequest && <p className="mt-3 text-xs font-semibold text-primary">Запрос на бан уже отправлен администратору.</p>}
