@@ -509,6 +509,8 @@ function PlayersSection({
   onElo,
   onBan,
   onRole,
+  ownerCanAdmin,
+  onAdmin,
   onSupportPriority,
   onAssignCustom,
   onRemoveCustom,
