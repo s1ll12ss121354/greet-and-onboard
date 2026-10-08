@@ -376,7 +376,7 @@ function MatchmakingPage() {
                 <h2 className="mt-1 font-display text-xl font-bold">{lobby.player_count}/10 {t.players}</h2>
               </div>
               <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase text-primary">
-                {lobby.status === "host_needed" ? t.hostNeeded : lobby.status === "ready" ? t.ready : lobby.status === "waiting" ? t.waitingLobby : t.searching}
+                {lobby.status === "in_game" ? "Матч идёт" : lobby.status === "ready_check" ? "Проверка готовности" : lobby.status === "host_needed" ? t.hostNeeded : lobby.status === "ready" ? t.ready : lobby.status === "waiting" ? t.waitingLobby : lobby.status === "full" ? t.full : t.searching}
               </span>
             </div>
 
