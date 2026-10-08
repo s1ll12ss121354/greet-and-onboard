@@ -108,6 +108,7 @@ export type Database = {
           id?: string
           losses?: number
           nickname?: string
+          last_seen_at?: string | null
           wins?: number
         }
         Relationships: []
@@ -265,6 +266,114 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_logs: {
+        Row: {
+          created_at: string
+          details: Json
+          event_type: string
+          id: string
+          path: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          event_type: string
+          id?: string
+          path?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          event_type?: string
+          id?: string
+          path?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ban_requests: {
+        Row: {
+          created_at: string
+          id: string
+          report_id: string
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_nick: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          report_id: string
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_nick: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          report_id?: string
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_nick?: string
+        }
+        Relationships: []
+      }
+      custom_roles: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by: string
+          description?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      user_custom_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -288,6 +397,55 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      log_activity: {
+        Args: {
+          p_event_type: string
+          p_path?: string | null
+          p_details?: Json
+        }
+        Returns: string
+      }
+      request_report_ban: {
+        Args: {
+          p_report_id: string
+        }
+        Returns: string
+      }
+      review_ban_request: {
+        Args: {
+          p_request_id: string
+          p_approve: boolean
+        }
+        Returns: boolean
+      }
+      admin_create_custom_role: {
+        Args: {
+          p_name: string
+          p_color?: string
+          p_description?: string
+        }
+        Returns: string
+      }
+      admin_assign_custom_role: {
+        Args: {
+          p_user_id: string
+          p_role_id: string
+        }
+        Returns: boolean
+      }
+      admin_remove_custom_role: {
+        Args: {
+          p_user_id: string
+          p_role_id: string
+        }
+        Returns: boolean
+      }
+      admin_delete_custom_role: {
+        Args: {
+          p_role_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
