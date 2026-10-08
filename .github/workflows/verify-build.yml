@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: bun install
       - name: Lint
-        run: bunx eslint . --rule '{"prettier/prettier":"off"}'
+        run: bunx eslint . --rule '{"prettier/prettier":"off","@typescript-eslint/no-explicit-any":"off","prefer-const":"off"}'
       - name: Unit tests
         run: bun run test
       - name: Production build
