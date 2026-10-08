@@ -166,7 +166,8 @@ function MatchFoundPage() {
                 <div className="mt-3 break-all font-display text-2xl font-bold">
                   {host}
                 </div>
-                {hostUserId === user?.id && (
+                {(hostUserId === user?.id ||
+                  host.trim().toLowerCase() === profile?.nickname?.trim().toLowerCase()) && (
                   <button
                     onClick={() => {
                       if (lobbyId) {
