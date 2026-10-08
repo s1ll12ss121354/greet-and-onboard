@@ -1,6 +1,6 @@
 -- ReCorN: harden profiles, custom_roles and user_custom_roles.
--- Public profile data for a lobby is exposed only through a narrow RPC.
--- Direct profile reads remain available to the current user and admins.
+-- Public lobby profile data is exposed only through a narrow RPC.
+-- Direct profile reads remain available only to the current user and admins.
 
 -- ============================================================================
 -- PROFILES
@@ -8,8 +8,6 @@
 
 alter table public.profiles enable row level security;
 
--- No anonymous access to profiles. Authenticated users can read only their
--- own profile or profiles when they are an admin.
 revoke select, insert, delete on public.profiles from anon, authenticated;
 grant select, update on public.profiles to authenticated;
 
@@ -35,8 +33,6 @@ to authenticated
 using (public.has_role((select auth.uid()), 'admin'))
 with check (public.has_role((select auth.uid()), 'admin'));
 
--- A defense-in-depth trigger prevents future broad UPDATE grants from turning
--- into self-service ELO, ban, priority, or identity changes.
 create or replace function public.protect_profile_mutations()
 returns trigger
 language plpgsql
@@ -46,20 +42,17 @@ as $$
 declare
   uid uuid := (select auth.uid());
 begin
-  -- Trusted server-side operations.
   if current_setting('recorn.match_result', true) = '1'
      or current_setting('recorn.presence', true) = '1'
      or current_setting('recorn.profile_internal', true) = '1' then
     return new;
   end if;
 
-  -- Administrators use dedicated server-side RPCs / admin panel.
   if uid is not null
      and public.has_role(uid, 'admin') then
     return new;
   end if;
 
-  -- Defensive lock for non-admin callers.
   if new.id is distinct from old.id
      or new.nickname is distinct from old.nickname
      or new.created_at is distinct from old.created_at
@@ -87,8 +80,6 @@ before update on public.profiles
 for each row
 execute function public.protect_profile_mutations();
 
--- Presence must use a transaction-local trusted flag because last_seen_at is
--- intentionally not writable from the client Data API.
 create or replace function public.touch_presence()
 returns boolean
 language plpgsql
@@ -119,8 +110,7 @@ $$;
 revoke all on function public.touch_presence() from public, anon;
 grant execute on function public.touch_presence() to authenticated;
 
--- Safe lobby profile endpoint. Only participants of the lobby can call it.
--- It intentionally returns no banned/support_priority/ban fields.
+-- Safe lobby profile endpoint. It never returns banned/support_priority/ban fields.
 create or replace function public.lobby_public_profiles(p_lobby_id uuid)
 returns table (
   id uuid,
@@ -167,8 +157,6 @@ grant execute on function public.lobby_public_profiles(uuid) to authenticated;
 alter table public.custom_roles enable row level security;
 alter table public.user_custom_roles enable row level security;
 
--- Custom roles are admin configuration. Nobody can mutate these tables through
--- the Data API; the admin RPCs are the only supported write interface.
 revoke all on public.custom_roles from public, anon, authenticated;
 revoke all on public.user_custom_roles from public, anon, authenticated;
 
@@ -198,8 +186,6 @@ using (
   or public.has_role((select auth.uid()), 'admin')
 );
 
--- Defense-in-depth: even if someone later adds table grants, direct writes
--- still require admin authority and cannot transfer ownership of a role row.
 create or replace function public.protect_custom_role_writes()
 returns trigger
 language plpgsql
@@ -277,8 +263,7 @@ before insert or update or delete on public.user_custom_roles
 for each row
 execute function public.protect_user_custom_role_writes();
 
--- Recreate the admin RPCs here so this hardening migration is self-contained
--- even if an earlier custom-role migration was only partially applied.
+-- Recreate admin custom-role RPCs so this migration is self-contained.
 
 create or replace function public.admin_create_custom_role(
   p_name text,
@@ -289,7 +274,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   uid uuid := (select auth.uid());
   role_id uuid;
@@ -300,36 +285,18 @@ begin
     raise exception 'ADMIN_ONLY';
   end if;
 
-  if clean_name !~ '^[^[:cntrl:]]{2,40}revoke execute on function public.admin_create_custom_role(text,text,text) from public, anon;
-revoke execute on function public.admin_assign_custom_role(uuid,uuid) from public, anon;
-revoke execute on function public.admin_remove_custom_role(uuid,uuid) from public, anon;
-revoke execute on function public.admin_delete_custom_role(uuid) from public, anon;
-
-grant execute on function public.admin_create_custom_role(text,text,text) to authenticated;
-grant execute on function public.admin_assign_custom_role(uuid,uuid) to authenticated;
-grant execute on function public.admin_remove_custom_role(uuid,uuid) to authenticated;
-grant execute on function public.admin_delete_custom_role(uuid) to authenticated;
-
-notify pgrst, 'reload schema'; then
+  if char_length(clean_name) < 2 or char_length(clean_name) > 40
+     or clean_name ~ E'[[:cntrl:]]' then
     raise exception 'INVALID_ROLE_NAME';
   end if;
 
-  if clean_color !~ '^#[0-9A-Fa-f]{6}revoke execute on function public.admin_create_custom_role(text,text,text) from public, anon;
-revoke execute on function public.admin_assign_custom_role(uuid,uuid) from public, anon;
-revoke execute on function public.admin_remove_custom_role(uuid,uuid) from public, anon;
-revoke execute on function public.admin_delete_custom_role(uuid) from public, anon;
-
-grant execute on function public.admin_create_custom_role(text,text,text) to authenticated;
-grant execute on function public.admin_assign_custom_role(uuid,uuid) to authenticated;
-grant execute on function public.admin_remove_custom_role(uuid,uuid) to authenticated;
-grant execute on function public.admin_delete_custom_role(uuid) to authenticated;
-
-notify pgrst, 'reload schema'; then
+  if char_length(clean_color) <> 7
+     or clean_color !~ '^#[0-9A-Fa-f]{6}' then
     raise exception 'INVALID_ROLE_COLOR';
   end if;
 
   insert into public.custom_roles(name, color, description, created_by)
-  values(
+  values (
     clean_name,
     clean_color,
     left(coalesce(p_description, ''), 160),
@@ -344,7 +311,7 @@ notify pgrst, 'reload schema'; then
       path,
       details
     )
-    values(
+    values (
       uid,
       'custom_role_created',
       '/admin',
@@ -360,7 +327,7 @@ notify pgrst, 'reload schema'; then
 
   return role_id;
 end;
-$;
+$$;
 
 create or replace function public.admin_assign_custom_role(
   p_user_id uuid,
@@ -370,7 +337,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   uid uuid := (select auth.uid());
 begin
@@ -379,49 +346,24 @@ begin
   end if;
 
   if not exists (
-    select 1
-    from public.custom_roles
-    where id = p_role_id
+    select 1 from public.custom_roles where id = p_role_id
   ) then
     raise exception 'CUSTOM_ROLE_NOT_FOUND';
   end if;
 
   if not exists (
-    select 1
-    from public.profiles
-    where id = p_user_id
+    select 1 from public.profiles where id = p_user_id
   ) then
     raise exception 'PLAYER_NOT_FOUND';
   end if;
 
   insert into public.user_custom_roles(user_id, role_id)
-  values(p_user_id, p_role_id)
-  on conflict(user_id, role_id) do nothing;
-
-  begin
-    insert into public.activity_logs(
-      user_id,
-      event_type,
-      path,
-      details
-    )
-    values(
-      uid,
-      'custom_role_assigned',
-      '/admin',
-      jsonb_build_object(
-        'target_user_id', p_user_id,
-        'role_id', p_role_id
-      )
-    );
-  exception
-    when others then
-      null;
-  end;
+  values (p_user_id, p_role_id)
+  on conflict (user_id, role_id) do nothing;
 
   return true;
 end;
-$;
+$$;
 
 create or replace function public.admin_remove_custom_role(
   p_user_id uuid,
@@ -431,7 +373,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   uid uuid := (select auth.uid());
 begin
@@ -443,30 +385,9 @@ begin
   where user_id = p_user_id
     and role_id = p_role_id;
 
-  begin
-    insert into public.activity_logs(
-      user_id,
-      event_type,
-      path,
-      details
-    )
-    values(
-      uid,
-      'custom_role_removed',
-      '/admin',
-      jsonb_build_object(
-        'target_user_id', p_user_id,
-        'role_id', p_role_id
-      )
-    );
-  exception
-    when others then
-      null;
-  end;
-
   return true;
 end;
-$;
+$$;
 
 create or replace function public.admin_delete_custom_role(
   p_role_id uuid
@@ -475,7 +396,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   uid uuid := (select auth.uid());
 begin
@@ -486,29 +407,10 @@ begin
   delete from public.custom_roles
   where id = p_role_id;
 
-  begin
-    insert into public.activity_logs(
-      user_id,
-      event_type,
-      path,
-      details
-    )
-    values(
-      uid,
-      'custom_role_deleted',
-      '/admin',
-      jsonb_build_object('role_id', p_role_id)
-    );
-  exception
-    when others then
-      null;
-  end;
-
   return true;
 end;
-$;
+$$;
 
--- Only the approved admin RPCs are allowed to mutate the custom-role tables.
 revoke execute on function public.admin_create_custom_role(text,text,text) from public, anon;
 revoke execute on function public.admin_assign_custom_role(uuid,uuid) from public, anon;
 revoke execute on function public.admin_remove_custom_role(uuid,uuid) from public, anon;
