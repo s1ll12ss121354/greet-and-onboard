@@ -237,7 +237,7 @@ function ProfilePage() {
       )}
       {securityMessage && <p role="status" className="mt-3 text-sm text-primary">{securityMessage}</p>}
       {securityError && <p role="alert" className="mt-3 text-sm text-destructive">{securityError}</p>}
-      <p className="mt-3 text-xs text-muted-foreground">После привязки вход можно выполнять по нику или по почте. Восстановление пароля доступно на странице входа.</p>
+      <p className="mt-3 text-xs text-muted-foreground">После привязки вход выполняется по почте. Восстановление пароля доступно на странице входа.</p>
     </section>
     <section className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">{stats.map(({label,value,icon:Icon,valueClass})=><div key={label} className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</span><Icon className="size-4 text-muted-foreground"/></div><div className={`font-display mt-3 text-3xl font-bold ${valueClass}`}>{value}</div></div>)}</section>
     <section className="mt-8"><h2 className="font-display text-lg font-bold uppercase tracking-wide">История матчей</h2><div className="grid-bg mt-4 flex h-40 items-center justify-center rounded-2xl border border-border bg-card"><p className="text-sm text-muted-foreground">У игрока пока нет матчей.</p></div></section>
