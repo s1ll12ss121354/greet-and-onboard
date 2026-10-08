@@ -17,7 +17,9 @@ const input = "w-full rounded-xl border border-border bg-background/70 px-4 py-3
 function HostPage() {
   const { user, profile, loading } = useAuth();
   const [vip, setVip] = useState("");
-  const [reason, setReason] = useState("");\n  const [discord, setDiscord] = useState("");\n  const [telegram, setTelegram] = useState("");
+  const [reason, setReason] = useState("");
+  const [discord, setDiscord] = useState("");
+  const [telegram, setTelegram] = useState("");
   const [rules, setRules] = useState(false);
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<"pending" | "approved" | "rejected" | "none">("none");
@@ -59,6 +61,8 @@ function HostPage() {
       roblox_nick: profile.nickname.trim(),
       has_vip: vip === "yes",
       reason: reason.trim(),
+      discord_contact: discord.trim() || null,
+      telegram_contact: telegram.trim() || null,
       accepted_rules: true,
       status: "pending",
     });
@@ -128,7 +132,11 @@ function HostPage() {
       <form onSubmit={submit} className="space-y-5 rounded-3xl border border-border bg-card p-5 shadow-2xl sm:p-8">
         <label className="block"><span className="mb-2 block text-sm font-bold">Ник в Roblox</span><input disabled value={profile?.nickname ?? ""} className={input} /></label>
         <label className="block"><span className="mb-2 block text-sm font-bold">Есть VIP?</span><select required value={vip} onChange={(e) => setVip(e.target.value)} className={input}><option value="">Выберите вариант</option><option value="yes">Да</option><option value="no">Нет</option></select></label>
-        <div className="grid gap-4 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-sm font-bold">Discord</span><input value={discord} onChange={(e) => setDiscord(e.target.value)} placeholder="@username" className={input} /></label><label className="block"><span className="mb-2 block text-sm font-bold">Telegram</span><input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="@username" className={input} /></label></div>\n        <p className="text-xs text-muted-foreground">Укажите хотя бы один контакт. Он доступен только администраторам при рассмотрении заявки.</p>\n        <label className="block"><span className="mb-2 block text-sm font-bold">Почему именно вы?</span><textarea required minLength={20} rows={6} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Расскажите об опыте, возрасте, часах игры и почему вам можно доверить матч." className={input} /></label>
+        <div className="grid gap-4 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-sm font-bold">Discord</span><input value={discord} onChange={(e) => setDiscord(e.target.value)} placeholder="@username" className={input} /></label><label className="block"><span className="mb-2 block text-sm font-bold">Telegram</span><input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="@username" className={input} /></label></div>
+        <p className="text-xs text-muted-foreground">Укажите хотя бы один контакт. Он доступен только администраторам при рассмотрении заявки.</p>
+        <div className="grid gap-4 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-sm font-bold">Discord</span><input value={discord} onChange={(e) => setDiscord(e.target.value)} placeholder="@username" className={input} /></label><label className="block"><span className="mb-2 block text-sm font-bold">Telegram</span><input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="@username" className={input} /></label></div>
+        <p className="text-xs text-muted-foreground">Укажите хотя бы один контакт. Он доступен только администраторам при рассмотрении заявки.</p>
+        <label className="block"><span className="mb-2 block text-sm font-bold">Почему именно вы?</span><textarea required minLength={20} rows={6} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Расскажите об опыте, возрасте, часах игры и почему вам можно доверить матч." className={input} /></label>
         <div className="rounded-2xl border border-border bg-background/60 p-5">
           <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" /><div><p className="font-bold">Правила хоста</p><ul className="mt-2 space-y-1 text-sm text-muted-foreground"><li>• не подсказывать игрокам;</li><li>• следить за честной игрой;</li><li>• оставаться нейтральным.</li></ul></div></div>
           <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm"><input type="checkbox" required checked={rules} onChange={(e) => setRules(e.target.checked)} className="mt-1 size-4 accent-[var(--primary)]" /><span>Я прочитал правила и согласен соблюдать обязанности хоста.</span></label>
