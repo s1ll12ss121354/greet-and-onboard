@@ -171,6 +171,10 @@ function MatchStartNotifier() {
       }
 
       window.sessionStorage.setItem(handledKey, "1");
+      window.sessionStorage.setItem("recorn-match-lobby", lobbyId);
+      if (hostNickname) {
+        window.sessionStorage.setItem("recorn-match-host", hostNickname);
+      }
 
       try {
         navigator.vibrate?.([350, 120, 350, 120, 500]);
@@ -204,8 +208,10 @@ function MatchStartNotifier() {
 
       window.setTimeout(() => {
         if (!stopped) {
-          const query = hostNickname ? "?host=" + encodeURIComponent(hostNickname) : "";
-          window.location.assign("/match-found" + query);
+          const query = new URLSearchParams();
+          query.set("lobby", lobbyId);
+          if (hostNickname) query.set("host", hostNickname);
+          window.location.assign("/match-found?" + query.toString());
         }
       }, 700);
     };
