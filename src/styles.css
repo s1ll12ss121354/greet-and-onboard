@@ -146,7 +146,7 @@ aside {
   box-shadow: 24px 0 80px rgb(0 0 0 / .16);
 }
 
-main { position: relative; }
+main { position: relative; }\nheader.fixed { box-shadow: 0 10px 45px rgb(0 0 0 / .16); }\nheader.fixed a { text-decoration: none; }
 
 main .bg-card,
 main .bg-background\/60,
