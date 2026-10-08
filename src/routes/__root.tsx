@@ -172,6 +172,9 @@ function MatchStartNotifier() {
 
       window.sessionStorage.setItem(handledKey, "1");
       window.sessionStorage.setItem("recorn-match-lobby", lobbyId);
+      if (lobby.host_user_id) {
+        window.sessionStorage.setItem("recorn-match-host-id", lobby.host_user_id);
+      }
       if (hostNickname) {
         window.sessionStorage.setItem("recorn-match-host", hostNickname);
       }
@@ -211,6 +214,7 @@ function MatchStartNotifier() {
           const query = new URLSearchParams();
           query.set("lobby", lobbyId);
           if (hostNickname) query.set("host", hostNickname);
+          if (lobby.host_user_id) query.set("host_id", lobby.host_user_id);
           window.location.assign("/match-found?" + query.toString());
         }
       }, 700);
