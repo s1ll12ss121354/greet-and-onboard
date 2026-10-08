@@ -39,16 +39,6 @@ function AuthPage() {
     setBusy(true);
     const email = nickToEmail(clean);
     if (mode === "signup") {
-      const { data: taken } = await supabase
-        .from("profiles")
-        .select("id")
-        .ilike("nickname", clean)
-        .maybeSingle();
-      if (taken) {
-        setErr("Этот ник Roblox уже зарегистрирован");
-        setBusy(false);
-        return;
-      }
       const { error } = await supabase.auth.signUp({
         email,
         password: pass,
