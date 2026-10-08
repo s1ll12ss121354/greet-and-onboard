@@ -177,7 +177,7 @@ function MatchFoundPage() {
                   >
                     Внести результат матча
                   </button>
-                }
+                )}
                 <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
                   <button
                     onClick={copyHost}
