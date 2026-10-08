@@ -306,50 +306,6 @@ function MatchmakingPage() {
   }
 
   const hostPlayer = lobby?.host_user_id ? players.find((p) => p.id === lobby.host_user_id) : null;
-  const matchStartHandled = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!lobby || lobby.status !== "in_game" || !user) return;
-    if (matchStartHandled.current === lobby.id) return;
-
-    matchStartHandled.current = lobby.id;
-    const hostNickname = hostPlayer?.nickname ?? "";
-
-    try {
-      navigator.vibrate?.([350, 120, 350, 120, 500]);
-    } catch {
-      // Vibration is optional and may be unavailable on desktop browsers.
-    }
-
-    try {
-      const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtor) {
-        const audio = new AudioCtor();
-        const now = audio.currentTime;
-        [0, 0.16, 0.32].forEach((offset, index) => {
-          const oscillator = audio.createOscillator();
-          const gain = audio.createGain();
-          oscillator.type = "sine";
-          oscillator.frequency.value = index === 2 ? 880 : 660;
-          gain.gain.setValueAtTime(0.0001, now + offset);
-          gain.gain.exponentialRampToValueAtTime(0.16, now + offset + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.13);
-          oscillator.connect(gain);
-          gain.connect(audio.destination);
-          oscillator.start(now + offset);
-          oscillator.stop(now + offset + 0.14);
-        });
-        window.setTimeout(() => void audio.close(), 900);
-      }
-    } catch {
-      // Browser autoplay/audio policy may block sound; vibration and navigation still work.
-    }
-
-    window.setTimeout(() => {
-      const query = hostNickname ? `?host=${encodeURIComponent(hostNickname)}` : "";
-      window.location.assign(`/match-found${query}`);
-    }, 700);
-  }, [lobby?.id, lobby?.status, hostPlayer?.nickname, user?.id]);
 
   if (loading) return <div className="mx-auto max-w-6xl animate-pulse rounded-3xl border border-border bg-card p-8">Loading…</div>;
   if (!user || !profile) return (
