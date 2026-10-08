@@ -17,6 +17,7 @@ import { Route as HostRouteImport } from './routes/host'
 import { Route as PlayersRouteImport } from './routes/players'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as MatchmakingRouteImport } from './routes/matchmaking'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const ReportsRoute = ReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MatchmakingRoute = MatchmakingRouteImport.update({
+  id: '/matchmaking',
+  path: '/matchmaking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,9 @@ export interface FileRoutesByFullPath {
   '/players': typeof PlayersRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
+  '/matchmaking': typeof MatchmakingRoute
+  '/matchmaking': typeof MatchmakingRoute
+  '/matchmaking': typeof MatchmakingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/players'
     | '/profile'
     | '/reports'
+    | '/matchmaking'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/players'
     | '/profile'
     | '/reports'
+    | '/matchmaking'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/players'
     | '/profile'
     | '/reports'
+    | '/matchmaking'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   PlayersRoute: typeof PlayersRoute
   ProfileRoute: typeof ProfileRoute
   ReportsRoute: typeof ReportsRoute
+  MatchmakingRoute: typeof MatchmakingRoute
 }
 
 declare module '@tanstack/react-router' {
