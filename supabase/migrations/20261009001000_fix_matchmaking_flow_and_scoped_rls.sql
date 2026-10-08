@@ -378,6 +378,29 @@ $$;
 revoke execute on function public.mm_search_lobby() from public, anon;
 grant execute on function public.mm_search_lobby() to authenticated;
 
+-- A force-started lobby can intentionally assign an ordinary lobby creator
+-- as the host. That player still needs to upload the match screenshot.
+drop policy if exists "Host can upload match screenshots" on storage.objects;
+create policy "Host can upload match screenshots"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'match-screenshots'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+  and (
+    public.has_role((select auth.uid()), 'host')
+    or public.has_role((select auth.uid()), 'moderator')
+    or public.has_role((select auth.uid()), 'admin')
+    or exists (
+      select 1
+      from public.match_lobbies l
+      where l.host_user_id = (select auth.uid())
+        and storage.filename(name) like l.id::text || '-%'
+    )
+  )
+);
+
 -- Rework map voting so a successful map selection actually starts the game
 -- through the same safe host/teams path instead of deadlocking at ready_check.
 create or replace function public.mm_vote_map(
