@@ -106,7 +106,7 @@ language sql
 stable
 security definer
 set search_path = ''
-as $$
+as $
   select
     p_user_id = (select auth.uid())
     and exists (
@@ -114,9 +114,8 @@ as $$
       from public.profiles
       where id = p_user_id
         and banned = true
-        and (ban_until is null or ban_until > now())
     );
-$$;
+$;
 
 revoke execute on function public.is_active_ban(uuid) from public, anon, authenticated;
 
