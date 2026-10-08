@@ -153,7 +153,7 @@ begin
     where id = player_id;
   end loop;
 
-  if (select count(*) from public.match_result_players where result_id = result_id)
+  if (select count(*) from public.match_result_players where match_result_players.result_id = submit_match_result.result_id)
      <> (select count(*) from public.match_lobby_members where lobby_id = p_lobby_id and member_kind = 'player') then
     raise exception 'RESULT_MISSING_PLAYERS';
   end if;
