@@ -85,6 +85,7 @@ export interface FileRoutesByTo {
   '/players': typeof PlayersRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
+  '/matchmaking': typeof MatchmakingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,6 +97,7 @@ export interface FileRoutesById {
   '/players': typeof PlayersRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
+  '/matchmaking': typeof MatchmakingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
