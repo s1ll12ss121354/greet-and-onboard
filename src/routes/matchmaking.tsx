@@ -7,7 +7,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 export const Route = createFileRoute("/matchmaking")({
   head: () => ({ meta: [
-    { title: "Matchmaking — ReCorN" },
+    { title: "Matchmaking — GreetAndWin" },
     { name: "description", content: "Поиск соревновательной игры Block Strike по ELO." },
   ]}),
   component: MatchmakingPage,
