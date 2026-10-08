@@ -170,6 +170,7 @@ as $
       from public.profiles
       where id = p_user_id
         and banned = true
+        and (ban_until is null or ban_until > now())
     );
 $;
 
@@ -546,7 +547,10 @@ begin
     into player_elo
   from public.profiles p
   where p.id = uid
-    and not p.banned;
+    and not (
+      p.banned
+      and (p.ban_until is null or p.ban_until > now())
+    );
 
   if player_elo is null then
     raise exception 'PROFILE_REQUIRED';
