@@ -136,6 +136,7 @@ begin
 
   update public.match_lobbies
   set status = 'in_game',
+      host_user_id = uid,
       selected_map = coalesce(selected_map, 'Mirage'),
       last_activity_at = now()
   where id = p_lobby_id;
