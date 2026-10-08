@@ -56,21 +56,19 @@ function HostPage() {
       return;
     }
 
-    const { error } = await supabase.from("host_applications").insert({
-      user_id: user.id,
-      roblox_nick: profile.nickname.trim(),
-      has_vip: vip === "yes",
-      reason: reason.trim(),
-      discord_contact: discord.trim() || null,
-      telegram_contact: telegram.trim() || null,
-      accepted_rules: true,
-      status: "pending",
+    const { data: applicationId, error } = await supabase.rpc("submit_host_application", {
+      p_vip: vip === "yes",
+      p_reason: reason.trim(),
+      p_discord: discord.trim() || null,
+      p_telegram: telegram.trim() || null,
     });
 
-    if (error) {
-      setErr(error.code === "23505"
+    if (error || !applicationId) {
+      setErr(error?.message?.includes("ACTIVE_APPLICATION_EXISTS")
         ? "У вас уже есть активная заявка."
-        : "Заявка не отправлена. Проверьте соединение и попробуйте снова.");
+        : error?.message?.includes("CONTACT_REQUIRED")
+          ? "Укажите Discord или Telegram."
+          : "Заявка не отправлена. Проверьте соединение и попробуйте снова.");
     } else {
       setStatus("pending");
       setVip("");
