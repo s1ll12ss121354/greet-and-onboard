@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, History, User, Search, Flag, Shield, Crosshair, Crown, LogIn, Heart, Menu, X } from "lucide-react";
+import { Home, History, User, Search, Flag, Shield, Crosshair, Crown, LogIn, Heart, Menu, X, Send } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: "/host", label: "Стать хостом", en: "Become host", icon: Crown },
   { to: "/reports", label: "Жалобы", en: "Reports", icon: Flag },
   { to: "/support", label: "Поддержать проект", en: "Support project", icon: Heart },
+  { to: "/support-telegram", label: "Техподдержка Telegram", en: "Telegram support", icon: Send },
   { to: "/admin", label: "Админ-панель", en: "Admin", icon: Shield },
   { to: "/auth", label: "Вход", en: "Login", icon: LogIn },
 ] as const;
