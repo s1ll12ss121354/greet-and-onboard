@@ -287,9 +287,9 @@ begin
 
   select count(*)
     into member_count
-  from public.match_lobby_members
-  where lobby_id = lobby_id
-    and member_kind = 'player';
+  from public.match_lobby_members m
+  where m.lobby_id = lobby_id
+    and m.member_kind = 'player';
 
   if member_count >= 10 then
     perform public.mm_assign_teams(lobby_id);
