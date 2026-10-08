@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, History, User, Search, Flag, Shield, Crosshair, Crown, LogIn, Menu, X } from "lucide-react";
+import { Home, History, User, Search, Flag, Shield, Crosshair, Crown, LogIn, Heart, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: "/players", label: "Игроки", en: "Players", icon: Search },
   { to: "/host", label: "Стать хостом", en: "Become host", icon: Crown },
   { to: "/reports", label: "Жалобы", en: "Reports", icon: Flag },
+  { to: "/support", label: "Поддержать проект", en: "Support project", icon: Heart },
   { to: "/admin", label: "Админ-панель", en: "Admin", icon: Shield },
   { to: "/auth", label: "Вход", en: "Login", icon: LogIn },
 ] as const;
@@ -23,7 +24,7 @@ export function AppSidebar() {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
   const items = NAV_ITEMS.filter((i) =>
-    i.to === "/auth" ? !user : i.to === "/admin" ? roles.includes("admin") : true
+    i.to === "/auth" ? !user : i.to === "/admin" ? (roles.includes("admin") || roles.includes("moderator")) : true
   );
 
   const Nav = () => (
