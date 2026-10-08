@@ -187,6 +187,7 @@ function MatchmakingPage() {
 
   async function submitResult() {
     if (!lobby || lobby.host_user_id !== user.id || resultBusy) return;
+    if (!resultScreenshot) { setError("Загрузите скриншот результата хоста."); return; }
     const playerRows = members.filter((m) => m.member_kind === "player");
     if (playerRows.length < 2) { setError("В матче недостаточно игроков."); return; }
     setResultBusy(true); setError("");
@@ -196,8 +197,8 @@ function MatchmakingPage() {
         if (!["image/png","image/jpeg","image/webp"].includes(resultScreenshot.type)) throw new Error("Можно загрузить только PNG, JPG или WEBP.");
         if (resultScreenshot.size > 5 * 1024 * 1024) throw new Error("Скриншот должен быть не больше 5 МБ.");
         const ext = resultScreenshot.name.split(".").pop()?.toLowerCase() || "png";
-        screenshotPath = user.id + "/" + lobby.id + "." + ext;
-        const up = await supabase.storage.from("match-screenshots").upload(screenshotPath, resultScreenshot, { upsert: true, contentType: resultScreenshot.type });
+        screenshotPath = user.id + "/" + lobby.id + "-" + Date.now() + "." + ext;
+        const up = await supabase.storage.from("match-screenshots").upload(screenshotPath, resultScreenshot, { upsert: false, contentType: resultScreenshot.type });
         if (up.error) throw up.error;
       }
       const payload = playerRows.map((m) => ({
