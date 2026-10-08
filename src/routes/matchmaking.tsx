@@ -60,6 +60,8 @@ function MatchmakingPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [mapVotes, setMapVotes] = useState<MapVote[]>([]);
   const [myMapVote, setMyMapVote] = useState<string | null>(null);
+  const [readyStates, setReadyStates] = useState<Record<string, boolean>>({});
+  const [readyDeadline, setReadyDeadline] = useState<number | null>(null);
   const [openLobbies, setOpenLobbies] = useState<Lobby[]>([]);
   const [notifications, setNotifications] = useState<{id:string; message:string}[]>([]);
   const [busy, setBusy] = useState(false);
@@ -72,22 +74,25 @@ function MatchmakingPage() {
   const staff = roles.some((r) => ["host","moderator","admin"].includes(r));
 
   async function loadLobby(id: string | null) {
-    if (!id) { setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setMapVotes([]); setMyMapVote(null); return; }
+    if (!id) { setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setReadyStates({}); setReadyDeadline(null); return; }
     const [l, m] = await Promise.all([
-      supabase.from("match_lobbies").select("id,status,creator_id,search_started_at,host_user_id,selected_map").eq("id",id).maybeSingle(),
+      supabase.from("match_lobbies").select("id,status,creator_id,search_started_at,host_user_id,selected_map,ready_check_started_at").eq("id",id).maybeSingle(),
       supabase.from("match_lobby_members").select("id,user_id,member_kind,joined_at").eq("lobby_id",id).order("joined_at"),
     ]);
     if (l.error || !l.data) { setLobby(null); return; }
     const rows = (m.data ?? []) as Member[];
     const ids = rows.map((x) => x.user_id);
     const { data: voteRows } = await supabase.from("match_lobby_map_votes").select("map_name,user_id").eq("lobby_id", id);
+    const { data: readyRows } = await supabase.from("match_lobby_ready").select("user_id,ready").eq("lobby_id", id);
     const counts = ["Mirage","Dust II","Nuke"].map((map_name) => ({ map_name, vote_count: (voteRows ?? []).filter((v) => v.map_name === map_name).length }));
     setMapVotes(counts);
     setMyMapVote((voteRows ?? []).find((v) => v.user_id === user?.id)?.map_name ?? null);
+    setReadyStates(Object.fromEntries((readyRows ?? []).map((r) => [r.user_id, Boolean(r.ready)])));
     const p = ids.length ? await supabase.from("profiles").select("id,nickname,elo").in("id",ids) : { data: [] };
     const mapped = (p.data ?? []) as Player[];
     setMembers(rows);
     setPlayers(mapped);
+    setReadyDeadline(l.data.ready_check_started_at ? new Date(l.data.ready_check_started_at).getTime() + 60000 : null);
     setLobby({
       ...(l.data as Omit<Lobby,"player_count"|"spectator_count">),
       player_count: rows.filter((x) => x.member_kind === "player").length,
@@ -130,6 +135,17 @@ function MatchmakingPage() {
     return () => window.clearInterval(timer);
   }, [lobby?.id]);
 
+  useEffect(() => {
+    if (!lobby || lobby.status !== "ready_check") return;
+    const timer = window.setInterval(async () => {
+      if (readyDeadline && Date.now() >= readyDeadline) {
+        await supabase.rpc("mm_expire_unready", { p_lobby_id: lobby.id });
+        await loadLobby(lobby.id);
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [lobby?.id, lobby?.status, readyDeadline]);
+
   const waitMinutes = lobby ? Math.max(0, Math.floor((Date.now() - new Date(lobby.search_started_at).getTime()) / 60000)) : 0;
   const elo = profile?.elo ?? 1000;
   const eloRange = { low: Math.max(0, elo - 100 - 300 * waitMinutes), high: elo + 500 + 500 * waitMinutes };
@@ -158,6 +174,13 @@ function MatchmakingPage() {
       await loadLobby(id);
     }
     setBusy(false);
+  }
+
+  async function setReady(value: boolean) {
+    if (!lobby) return;
+    setError("");
+    const { error: e } = await supabase.rpc("mm_set_ready", { p_lobby_id: lobby.id, p_ready: value });
+    if (e) setError(e.message || t.error); else await loadLobby(lobby.id);
   }
 
   async function voteMap(mapName: string) {
