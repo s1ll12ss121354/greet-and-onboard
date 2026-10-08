@@ -7,18 +7,17 @@ import {
   Flag,
   Shield,
   Crosshair,
-  Sparkles,
   Crown,
   LogIn,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const NAV_ITEMS = [
   { to: "/", label: "Главная", icon: Home },
   { to: "/history", label: "История", icon: History },
   { to: "/profile", label: "Профиль", icon: User },
   { to: "/players", label: "Найти игрока", icon: Search },
-  { to: "/coach", label: "AI-тренер", icon: Sparkles },
   { to: "/host", label: "Заявка на хоста", icon: Crown },
   { to: "/auth", label: "Вход", icon: LogIn },
   { to: "/reports", label: "Жалобы", icon: Flag },
@@ -27,6 +26,8 @@ const NAV_ITEMS = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { user, roles } = useAuth();
+  const items = NAV_ITEMS.filter((i) => (i.to === "/auth" ? !user : i.to === "/admin" ? roles.includes("admin") : true));
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-border bg-background">
@@ -40,7 +41,7 @@ export function AppSidebar() {
       </Link>
 
       <nav className="flex flex-1 flex-col gap-1 px-3">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+        {items.map(({ to, label, icon: Icon }) => {
           const active = pathname === to;
           return (
             <Link

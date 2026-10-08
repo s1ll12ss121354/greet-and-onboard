@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as CoachRouteImport } from './routes/coach'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as HostRouteImport } from './routes/host'
 import { Route as PlayersRouteImport } from './routes/players'
@@ -32,11 +31,6 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CoachRoute = CoachRouteImport.update({
-  id: '/coach',
-  path: '/coach',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -69,7 +63,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/coach': typeof CoachRoute
   '/history': typeof HistoryRoute
   '/host': typeof HostRoute
   '/players': typeof PlayersRoute
@@ -80,7 +73,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/coach': typeof CoachRoute
   '/history': typeof HistoryRoute
   '/host': typeof HostRoute
   '/players': typeof PlayersRoute
@@ -92,7 +84,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/coach': typeof CoachRoute
   '/history': typeof HistoryRoute
   '/host': typeof HostRoute
   '/players': typeof PlayersRoute
@@ -105,7 +96,6 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
-    | '/coach'
     | '/history'
     | '/host'
     | '/players'
@@ -116,7 +106,6 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
-    | '/coach'
     | '/history'
     | '/host'
     | '/players'
@@ -127,7 +116,6 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
-    | '/coach'
     | '/history'
     | '/host'
     | '/players'
@@ -139,7 +127,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
-  CoachRoute: typeof CoachRoute
   HistoryRoute: typeof HistoryRoute
   HostRoute: typeof HostRoute
   PlayersRoute: typeof PlayersRoute
@@ -168,13 +155,6 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/coach': {
-      id: '/coach'
-      path: '/coach'
-      fullPath: '/coach'
-      preLoaderRoute: typeof CoachRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -219,7 +199,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
-  CoachRoute: CoachRoute,
   HistoryRoute: HistoryRoute,
   HostRoute: HostRoute,
   PlayersRoute: PlayersRoute,

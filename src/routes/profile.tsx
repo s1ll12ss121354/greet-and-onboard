@@ -34,7 +34,7 @@ function ProfilePage() {
       </div>
     );
   const matches = profile.wins + profile.losses;
-  const PLAYER = { nickname: profile.nickname, level: Math.floor(profile.elo / 100), elo: profile.elo, wins: profile.wins, losses: profile.losses, matches, winRate: matches ? Math.round((profile.wins / matches) * 100) : 0 };
+  const PLAYER = { nickname: profile.nickname, level: faceitLevel(profile.elo), elo: profile.elo, wins: profile.wins, losses: profile.losses, matches, winRate: matches ? Math.round((profile.wins / matches) * 100) : 0 };
   const STATS = [
     { label: "Победы", value: PLAYER.wins, icon: Trophy, valueClass: "text-success" },
     { label: "Поражения", value: PLAYER.losses, icon: Skull, valueClass: "text-destructive" },
@@ -111,4 +111,10 @@ function ProfilePage() {
       </section>
     </div>
   );
+}
+
+function faceitLevel(elo: number) {
+  const caps = [500, 750, 900, 1050, 1200, 1350, 1530, 1750, 2000];
+  const i = caps.findIndex((c) => elo <= c);
+  return i === -1 ? 10 : i + 1;
 }

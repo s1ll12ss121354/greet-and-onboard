@@ -15,6 +15,13 @@
       "when": 1791403543452,
       "tag": "0001_coach_and_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791440931698,
+      "tag": "0002_no_auto_admin",
+      "breakpoints": true
     }
   ]
 }
