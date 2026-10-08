@@ -55,15 +55,12 @@ function MatchFoundPage() {
         return;
       }
 
-      if (sessionHost) {
-        setHost(sessionHost);
-        if (sessionHostId) setHostUserId(sessionHostId);
-        else if (sessionHost === profile?.nickname?.trim()) setHostUserId(user?.id ?? null);
-        setLoadingHost(false);
-        return;
-      }
-
       if (!lobbyId) {
+        if (sessionHost) {
+          setHost(sessionHost);
+          if (sessionHostId) setHostUserId(sessionHostId);
+          else if (sessionHost === profile?.nickname?.trim()) setHostUserId(user?.id ?? null);
+        }
         setLoadingHost(false);
         return;
       }
