@@ -148,8 +148,13 @@ function MatchmakingPage() {
 
   useEffect(() => {
     if (!user) return;
-    const saved = window.sessionStorage.getItem("recorn-lobby");
-    if (saved) loadLobby(saved);
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("lobby")?.trim() ?? "";
+    const saved = fromUrl || window.sessionStorage.getItem("recorn-lobby") || "";
+    if (saved) {
+      window.sessionStorage.setItem("recorn-lobby", saved);
+      void loadLobby(saved);
+    }
   }, [user?.id]);
 
   useEffect(() => {
@@ -174,6 +179,18 @@ function MatchmakingPage() {
     const timer = window.setInterval(() => setReadySeconds(Math.max(0, Math.ceil((readyDeadline - Date.now()) / 1000))), 250);
     return () => window.clearInterval(timer);
   }, [readyDeadline, lobby?.status]);
+
+  useEffect(() => {
+    if (!lobby || !user || lobby.status !== "in_game" || lobby.host_user_id !== user.id) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("results") !== "1") return;
+
+    setResultOpen(true);
+    params.delete("results");
+    params.delete("lobby");
+    const query = params.toString();
+    window.history.replaceState({}, "", "/matchmaking" + (query ? "?" + query : ""));
+  }, [lobby?.id, lobby?.status, lobby?.host_user_id, user?.id]);
 
   const waitMinutes = lobby ? Math.max(0, Math.floor((Date.now() - new Date(lobby.search_started_at).getTime()) / 60000)) : 0;
   const elo = profile?.elo ?? 1000;
