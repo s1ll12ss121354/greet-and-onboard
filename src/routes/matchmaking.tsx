@@ -137,7 +137,7 @@ function MatchmakingPage() {
   useEffect(() => {
     if (!user) return;
     const tick = async () => {
-      await supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id);
+      await supabase.rpc("touch_presence");
       await loadOpen();
       await loadNotifications();
     };
