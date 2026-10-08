@@ -1,0 +1,2 @@
+import {prisma} from "./core.js";
+export async function applyDeclinePenalty(userId:string,reason="Match declined"){const until=new Date(Date.now()+10*60_000);return prisma.$transaction(async tx=>{const s=await tx.playerStats.findUnique({where:{userId}});if(s)await tx.playerStats.update({where:{userId},data:{elo:Math.max(100,s.elo-25)}});await tx.penalty.create({data:{userId,type:"DECLINE",reason,eloDelta:-25}});return tx.cooldown.create({data:{userId,reason,expiresAt:until}})});}
