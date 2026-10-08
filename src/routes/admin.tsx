@@ -7,10 +7,10 @@ import { useAuth, type Profile } from "@/hooks/useAuth";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Админ-панель — ReCorN" },
-      { name: "description", content: "Административная и модераторская панель ReCorN." },
-      { property: "og:title", content: "Админ-панель — ReCorN" },
-      { property: "og:description", content: "Административная и модераторская панель ReCorN." },
+      { title: "Админ-панель — GreetAndWin" },
+      { name: "description", content: "Административная и модераторская панель GreetAndWin." },
+      { property: "og:title", content: "Админ-панель — GreetAndWin" },
+      { property: "og:description", content: "Административная и модераторская панель GreetAndWin." },
       { property: "og:type", content: "website" },
       { name: "robots", content: "noindex" },
     ],
