@@ -19,7 +19,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type App = { id: string; user_id: string; roblox_nick: string; has_vip: boolean; reason: string; status: string };
+type App = { id: string; user_id: string; roblox_nick: string; has_vip: boolean; reason: string; status: string; discord_contact: string | null; telegram_contact: string | null };
 type Role = { user_id: string; role: string };
 
 const btn = "rounded-md px-3 py-1.5 text-xs font-bold transition-colors";
@@ -102,7 +102,7 @@ function AdminPage() {
                   <span className="text-xs font-bold uppercase text-muted-foreground">{a.status === "approved" ? "одобрена" : "отклонена"}</span>
                 )}
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">{a.reason}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{a.reason}</p><div className="mt-2 flex flex-wrap gap-2 text-xs"><span className="rounded-lg border border-border bg-background/60 px-2 py-1">Discord: {a.discord_contact || "—"}</span><span className="rounded-lg border border-border bg-background/60 px-2 py-1">Telegram: {a.telegram_contact || "—"}</span></div>
             </div>
           ))}
         </div>
