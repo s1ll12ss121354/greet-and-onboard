@@ -45,31 +45,37 @@ export type Database = {
         Row: {
           accepted_rules: boolean
           created_at: string
+          discord_contact: string | null
           has_vip: boolean
           id: string
           reason: string
           roblox_nick: string
           status: string
+          telegram_contact: string | null
           user_id: string
         }
         Insert: {
           accepted_rules?: boolean
           created_at?: string
+          discord_contact?: string | null
           has_vip: boolean
           id?: string
           reason: string
           roblox_nick: string
           status?: string
+          telegram_contact?: string | null
           user_id: string
         }
         Update: {
           accepted_rules?: boolean
           created_at?: string
+          discord_contact?: string | null
           has_vip?: boolean
           id?: string
           reason?: string
           roblox_nick?: string
           status?: string
+          telegram_contact?: string | null
           user_id?: string
         }
         Relationships: []
@@ -101,6 +107,126 @@ export type Database = {
           losses?: number
           nickname?: string
           wins?: number
+        }
+        Relationships: []
+      }
+      match_lobbies: {
+        Row: {
+          created_at: string
+          creator_id: string
+          host_needed_notified_at: string | null
+          host_user_id: string | null
+          id: string
+          last_activity_at: string
+          max_players: number
+          search_started_at: string
+          status: string
+          target_players: number
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          host_needed_notified_at?: string | null
+          host_user_id?: string | null
+          id?: string
+          last_activity_at?: string
+          max_players?: number
+          search_started_at?: string
+          status?: string
+          target_players?: number
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          host_needed_notified_at?: string | null
+          host_user_id?: string | null
+          id?: string
+          last_activity_at?: string
+          max_players?: number
+          search_started_at?: string
+          status?: string
+          target_players?: number
+        }
+        Relationships: []
+      }
+      match_lobby_members: {
+        Row: {
+          id: string
+          joined_at: string
+          lobby_id: string
+          member_kind: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          lobby_id: string
+          member_kind?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          lobby_id?: string
+          member_kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      host_notifications: {
+        Row: {
+          created_at: string
+          host_user_id: string
+          id: string
+          lobby_id: string
+          message: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          host_user_id: string
+          id?: string
+          lobby_id: string
+          message: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          host_user_id?: string
+          id?: string
+          lobby_id?: string
+          message?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      security_login_events: {
+        Row: {
+          browser: string | null
+          created_at: string
+          device_category: string
+          id: string
+          ip_hash: string | null
+          os: string | null
+          user_id: string
+        }
+        Insert: {
+          browser?: string | null
+          created_at?: string
+          device_category: string
+          id?: string
+          ip_hash?: string | null
+          os?: string | null
+          user_id: string
+        }
+        Update: {
+          browser?: string | null
+          created_at?: string
+          device_category?: string
+          id?: string
+          ip_hash?: string | null
+          os?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -300,4 +426,32 @@ export const Constants = {
       app_role: ["host", "moderator", "admin"],
     },
   },
-} as const
+} as const        mm_create_lobby: {
+          Args: Record<PropertyKey, never>
+          Returns: string
+        }
+        mm_leave_lobby: {
+          Args: { p_lobby_id: string }
+          Returns: boolean
+        }
+        mm_open_lobbies: {
+          Args: Record<PropertyKey, never>
+          Returns: {
+            id: string
+            status: string
+            creator_id: string
+            player_count: number
+            spectator_count: number
+            search_started_at: string
+            host_user_id: string | null
+          }[]
+        }
+        mm_search_lobby: {
+          Args: Record<PropertyKey, never>
+          Returns: string
+        }
+        mm_join_lobby: {
+          Args: { p_lobby_id: string; p_spectator?: boolean }
+          Returns: Json
+        }
+
