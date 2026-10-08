@@ -84,6 +84,15 @@ export function AppSidebar() {
           <div className="mx-auto flex max-w-[1520px] items-center gap-1 px-7 py-1.5">
             <span className="mr-2 text-[8px] font-extrabold uppercase tracking-[.22em] text-muted-foreground">Community</span>
             {EXTRA_ITEMS.map(renderItem)}
+            <a
+              href="https://t.me/RecornCom"
+              target="_blank"
+              rel="noreferrer"
+              className="group inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-extrabold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            >
+              <Send className="size-3.5" />
+              <span>{language === "en" ? "Telegram" : "Telegram"}</span>
+            </a>
             {isStaff && renderItem({ to: "/admin", label: "Админ", en: "Admin", icon: Shield })}
           </div>
         </div>
@@ -93,7 +102,15 @@ export function AppSidebar() {
         <div className="fixed inset-x-0 top-[68px] z-50 border-b border-border bg-background p-3 shadow-2xl lg:hidden">
           <nav className="grid grid-cols-2 gap-1">{nav.map(renderItem)}</nav>
           <div className="mt-2 flex items-center justify-between border-t border-border pt-3">
-            <span className="text-[10px] font-extrabold uppercase tracking-[.2em] text-muted-foreground">RECORN / RC-01</span>
+            <a
+              href="https://t.me/RecornCom"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-[10px] font-extrabold text-muted-foreground hover:text-foreground"
+            >
+              <Send className="size-3.5" />
+              Telegram
+            </a>
             <button onClick={() => setLanguage(language === "ru" ? "en" : "ru")} className="border border-border px-3 py-2 text-[10px] font-extrabold">{language.toUpperCase()}</button>
           </div>
         </div>
