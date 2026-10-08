@@ -68,7 +68,7 @@ export function AppSidebar() {
             <Crosshair className="size-4" />
           </span>
           <span className="font-display text-sm font-extrabold tracking-tight">
-            Greet<span className="text-primary">And</span>Win
+            RECORN
           </span>
         </Link>
         <button aria-label="Меню" onClick={() => setOpen(!open)} className="rounded-md p-2 hover:bg-secondary">
@@ -87,7 +87,7 @@ export function AppSidebar() {
             </span>
             <div>
               <div className="font-display text-base font-extrabold tracking-tight">
-                Greet<span className="text-primary">And</span>Win
+                RECORN
               </div>
               <div className="mt-0.5 text-[9px] font-bold uppercase tracking-[.2em] text-muted-foreground">
                 Block Strike competitive
@@ -121,7 +121,7 @@ export function AppSidebar() {
             <button onClick={() => setLanguage("ru")} className={cn("flex-1 rounded px-2 py-1.5 text-[10px] font-extrabold", language === "ru" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>RU</button>
             <button onClick={() => setLanguage("en")} className={cn("flex-1 rounded px-2 py-1.5 text-[10px] font-extrabold", language === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>EN</button>
           </div>
-          <div className="mt-3 text-[9px] font-bold uppercase tracking-[.16em] text-muted-foreground">GW / 01 · Competitive network</div>
+          <div className="mt-3 text-[9px] font-bold uppercase tracking-[.16em] text-muted-foreground">RC / 01 · Competitive network</div>
         </div>
       </aside>
 
