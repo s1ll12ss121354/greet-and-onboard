@@ -77,23 +77,22 @@ function MatchmakingPage() {
   async function loadLobby(id: string | null) {
     if (!id) { setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setReadyStates({}); setReadyDeadline(null); setReadySeconds(60); return; }
     const [l, m] = await Promise.all([
-      supabase.from("match_lobbies").select("id,status,creator_id,search_started_at,host_user_id,selected_map,ready_check_started_at").eq("id",id).maybeSingle(),
-      supabase.from("match_lobby_members").select("id,user_id,member_kind,joined_at").eq("lobby_id",id).order("joined_at"),
+      supabase.from("match_lobbies").select("id,status,creator_id,search_started_at,host_user_id,selected_map").eq("id",id).maybeSingle(),
+      supabase.from("match_lobby_members").select("id,user_id,member_kind,team,joined_at").eq("lobby_id",id).order("joined_at"),
     ]);
     if (l.error || !l.data) { setLobby(null); return; }
     const rows = (m.data ?? []) as Member[];
     const ids = rows.map((x) => x.user_id);
     const { data: voteRows } = await supabase.from("match_lobby_map_votes").select("map_name,user_id").eq("lobby_id", id);
-    const { data: readyRows } = await supabase.from("match_lobby_ready").select("user_id,ready").eq("lobby_id", id);
     const counts = ["Mirage","Dust II","Nuke"].map((map_name) => ({ map_name, vote_count: (voteRows ?? []).filter((v) => v.map_name === map_name).length }));
     setMapVotes(counts);
     setMyMapVote((voteRows ?? []).find((v) => v.user_id === user?.id)?.map_name ?? null);
-    setReadyStates(Object.fromEntries((readyRows ?? []).map((r) => [r.user_id, Boolean(r.ready)])));
+    setReadyStates({});
     const p = ids.length ? await supabase.from("profiles").select("id,nickname,elo").in("id",ids) : { data: [] };
     const mapped = (p.data ?? []) as Player[];
     setMembers(rows);
     setPlayers(mapped);
-    const deadline = l.data.ready_check_started_at ? new Date(l.data.ready_check_started_at).getTime() + 60000 : null;
+    const deadline = null;
     setReadyDeadline(deadline);
     setReadySeconds(deadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : 60);
     setLobby({
@@ -306,6 +305,8 @@ function MatchmakingPage() {
           <button onClick={() => { loadOpen(); if (lobby) loadLobby(lobby.id); }} className="inline-flex items-center gap-2 rounded-xl border border-border bg-background/60 px-4 py-3 font-semibold hover:bg-secondary"><RefreshCw className="size-4"/>{t.refresh}</button>
         </div>
       </section>
+
+      {error && <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-semibold text-destructive">{error}</div>}
 
       {notifications.length > 0 && (
         <section className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
