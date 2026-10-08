@@ -124,7 +124,7 @@ alter table public.host_applications
   check (
     nullif(trim(discord_contact), '') is not null
     or nullif(trim(telegram_contact), '') is not null
-  );
+  ) not valid;
 
 create or replace function public.mm_search_lobby()
 returns uuid
