@@ -4,10 +4,10 @@ import { ArrowRight, Heart, ShieldCheck, Star, Zap } from "lucide-react";
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
-      { title: "Поддержать проект — GreetAndWin" },
-      { name: "description", content: "Поддержите GreetAndWin и получите кастомную роль и приоритет в репортах и заявках." },
-      { property: "og:title", content: "Поддержать проект — GreetAndWin" },
-      { property: "og:description", content: "Поддержите GreetAndWin от 50 ₽ и получите кастомную роль." },
+      { title: "Поддержать проект — ReCorN" },
+      { name: "description", content: "Поддержите ReCorN и получите кастомную роль и приоритет в репортах и заявках." },
+      { property: "og:title", content: "Поддержать проект — ReCorN" },
+      { property: "og:description", content: "Поддержите ReCorN от 50 ₽ и получите кастомную роль." },
     ],
   }),
   component: SupportPage,
@@ -20,17 +20,17 @@ function SupportPage() {
         <div className="absolute -right-24 -top-24 size-72 rounded-full bg-primary/20 blur-3xl" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-primary">
-            <Heart className="size-3.5" /> GreetAndWin
+            <Heart className="size-3.5" /> ReCorN
           </div>
           <h1 className="mt-6 font-display text-3xl font-bold sm:text-5xl">Поддержать проект</h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-            Если GreetAndWin тебе нравится и ты хочешь помочь проекту развиваться, можешь поддержать нас от <b className="text-foreground">50 ₽</b>.
+            Если ReCorN тебе нравится и ты хочешь помочь проекту развиваться, можешь поддержать нас от <b className="text-foreground">50 ₽</b>.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             <Benefit icon={Star} title="Кастомная роль" text="Выбери название роли и напиши его в комментарии к донату." />
             <Benefit icon={Zap} title="Приоритет" text="Приоритет при рассмотрении репортов и заявок на хоста." />
-            <Benefit icon={ShieldCheck} title="Поддержка" text="Помогаешь оплачивать и развивать инфраструктуру GreetAndWin." />
+            <Benefit icon={ShieldCheck} title="Поддержка" text="Помогаешь оплачивать и развивать инфраструктуру ReCorN." />
           </div>
 
           <div className="mt-8 rounded-2xl border border-border bg-background/60 p-5">
@@ -38,7 +38,7 @@ function SupportPage() {
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
               <li>Сумма поддержки — <b className="text-foreground">от 50 ₽</b>.</li>
               <li>В комментарии напиши, <b className="text-foreground">какую кастомную роль хочешь получить</b>.</li>
-              <li>Там же укажи свой <b className="text-foreground">ник GreetAndWin</b>.</li>
+              <li>Там же укажи свой <b className="text-foreground">ник ReCorN</b>.</li>
             </ol>
             <p className="mt-4 text-xs leading-5 text-muted-foreground">
               После проверки поддержки администрация выдаст указанную роль и включит приоритет. Не указывай пароли или другие секретные данные.
@@ -49,10 +49,10 @@ function SupportPage() {
             href="https://dalink.to/t1she123"
             target="_blank"
             rel="noopener noreferrer nofollow"
-            aria-label="Открыть страницу поддержки GreetAndWin"
+            aria-label="Открыть страницу поддержки ReCorN"
             className="mt-7 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
           >
-            Поддержать GreetAndWin <ArrowRight className="size-4" />
+            Поддержать ReCorN <ArrowRight className="size-4" />
           </a>
         </div>
       </section>
