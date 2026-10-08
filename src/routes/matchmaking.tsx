@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Bot, Crown, LogIn, Plus, RefreshCw, Search, Shield, Users, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -118,11 +118,9 @@ function MatchmakingPage() {
     return () => window.clearInterval(timer);
   }, [lobby?.id]);
 
-  const waitMinutes = useMemo(() => lobby ? Math.max(0, Math.floor((Date.now() - new Date(lobby.search_started_at).getTime()) / 60000)) : 0, [lobby?.search_started_at, lobby?.status]);
-  const eloRange = useMemo(() => {
-    const elo = profile?.elo ?? 1000;
-    return { low: Math.max(0, elo - 100 - 300 * waitMinutes), high: elo + 500 + 500 * waitMinutes };
-  }, [profile?.elo, waitMinutes]);
+  const waitMinutes = lobby ? Math.max(0, Math.floor((Date.now() - new Date(lobby.search_started_at).getTime()) / 60000)) : 0;
+  const elo = profile?.elo ?? 1000;
+  const eloRange = { low: Math.max(0, elo - 100 - 300 * waitMinutes), high: elo + 500 + 500 * waitMinutes };
 
   async function searchGame() {
     if (!user) return;
