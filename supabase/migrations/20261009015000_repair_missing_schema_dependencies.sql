@@ -681,3 +681,93 @@ grant execute on function public.public_leaderboard(integer) to anon, authentica
 grant execute on function public.touch_presence() to authenticated;
 
 notify pgrst, 'reload schema';
+
+
+-- ---------------------------------------------------------------------------
+-- Repair the security state reported by diagnostics as well.
+-- ---------------------------------------------------------------------------
+
+revoke execute on function public.has_role(uuid, public.app_role) from public, anon;
+grant execute on function public.has_role(uuid, public.app_role) to authenticated;
+
+revoke execute on function public.mm_search_lobby() from public, anon;
+grant execute on function public.mm_search_lobby() to authenticated;
+
+alter table public.profiles enable row level security;
+
+drop policy if exists "Profiles are public" on public.profiles;
+drop policy if exists "Authenticated users can read profiles" on public.profiles;
+drop policy if exists "Users admins and lobby members can read profiles" on public.profiles;
+
+create policy "Users admins and lobby members can read profiles"
+on public.profiles
+for select
+to authenticated
+using (
+  id = (select auth.uid())
+  or public.has_role((select auth.uid()), 'admin')
+  or exists (
+    select 1
+    from public.match_lobby_members m
+    where m.user_id = public.profiles.id
+      and exists (
+        select 1
+        from public.match_lobby_members mine
+        where mine.lobby_id = m.lobby_id
+          and mine.user_id = (select auth.uid())
+      )
+  )
+);
+
+drop policy if exists "Admins update profiles" on public.profiles;
+
+create policy "Admins update profiles"
+on public.profiles
+for update
+to authenticated
+using (public.has_role((select auth.uid()), 'admin'))
+with check (public.has_role((select auth.uid()), 'admin'));
+
+drop policy if exists "Staff read match results" on public.match_results;
+drop policy if exists "Participants and staff read match results" on public.match_results;
+
+create policy "Participants and staff read match results"
+on public.match_results
+for select
+to authenticated
+using (
+  public.has_role((select auth.uid()), 'moderator')
+  or public.has_role((select auth.uid()), 'admin')
+  or submitted_by = (select auth.uid())
+  or exists (
+    select 1
+    from public.match_lobby_members m
+    where m.lobby_id = public.match_results.lobby_id
+      and m.user_id = (select auth.uid())
+      and m.member_kind = 'player'
+  )
+);
+
+drop policy if exists "Staff read match result players" on public.match_result_players;
+drop policy if exists "Participants and staff read result players" on public.match_result_players;
+
+create policy "Participants and staff read result players"
+on public.match_result_players
+for select
+to authenticated
+using (
+  public.has_role((select auth.uid()), 'moderator')
+  or public.has_role((select auth.uid()), 'admin')
+  or user_id = (select auth.uid())
+  or exists (
+    select 1
+    from public.match_results r
+    join public.match_lobby_members m
+      on m.lobby_id = r.lobby_id
+    where r.id = public.match_result_players.result_id
+      and m.user_id = (select auth.uid())
+      and m.member_kind = 'player'
+  )
+);
+
+notify pgrst, 'reload schema';
