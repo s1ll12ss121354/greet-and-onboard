@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, History, User, Search, Flag, Shield, Crosshair, Crown, LogIn, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";\nimport { useLanguage } from "@/hooks/useLanguage";
 
 const NAV_ITEMS = [
   { to: "/", label: "Главная", icon: Home }, { to: "/history", label: "История", icon: History },
@@ -13,11 +13,11 @@ const NAV_ITEMS = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user, roles } = useAuth();
+  const { user, roles } = useAuth();\n  const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
   const items = NAV_ITEMS.filter((i) => i.to === "/auth" ? !user : i.to === "/admin" ? roles.includes("admin") : true);
 
-  const Nav = () => <nav className="flex flex-col gap-1 p-3">{items.map(({to,label,icon:Icon}) => {
+  const Nav = () => <nav className="flex flex-col gap-1 p-3">{items.map(({to,label,en,icon:Icon}) => {
     const active = pathname === to;
     return <Link key={to} to={to} onClick={() => setOpen(false)} className={cn("relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all", active ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}>
       {active && <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary" />}<Icon className={cn("size-4.5", active && "text-primary")} />{label}
