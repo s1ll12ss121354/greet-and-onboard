@@ -7,7 +7,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 export const Route = createFileRoute("/matchmaking")({
   head: () => ({ meta: [
-    { title: "Matchmaking — ReCorN" },
+    { title: "Matchmaking — GreetAndWin" },
     { name: "description", content: "Поиск соревновательной игры Block Strike по ELO." },
   ]}),
   component: MatchmakingPage,
@@ -128,7 +128,7 @@ function MatchmakingPage() {
 
   useEffect(() => {
     if (!user) return;
-    const saved = window.sessionStorage.getItem("recorn-lobby");
+    const saved = window.sessionStorage.getItem("greetandwin-lobby");
     if (saved) loadLobby(saved);
   }, [user?.id]);
 
@@ -166,7 +166,7 @@ function MatchmakingPage() {
     if (e || !data) setError(e?.message ?? t.error);
     else {
       const id = String(data);
-      window.sessionStorage.setItem("recorn-lobby", id);
+      window.sessionStorage.setItem("greetandwin-lobby", id);
       await loadLobby(id);
     }
     setBusy(false);
@@ -179,7 +179,7 @@ function MatchmakingPage() {
     if (e || !data) setError(e?.message ?? t.error);
     else {
       const id = String(data);
-      window.sessionStorage.setItem("recorn-lobby", id);
+      window.sessionStorage.setItem("greetandwin-lobby", id);
       await loadLobby(id);
     }
     setBusy(false);
@@ -205,7 +205,7 @@ function MatchmakingPage() {
     const { error: e } = await supabase.rpc("mm_join_lobby", { p_lobby_id:id, p_spectator:false });
     if (e) setError(e.message.includes("PLAYER_SLOTS_FULL") ? t.full : t.error);
     else {
-      window.sessionStorage.setItem("recorn-lobby", id);
+      window.sessionStorage.setItem("greetandwin-lobby", id);
       await loadLobby(id);
     }
     setBusy(false);
@@ -217,7 +217,7 @@ function MatchmakingPage() {
     const { error: e } = await supabase.rpc("mm_join_lobby", { p_lobby_id:id, p_spectator:true });
     if (e) setError(e.message.includes("LOBBY_FULL") ? t.full : t.error);
     else {
-      window.sessionStorage.setItem("recorn-lobby", id);
+      window.sessionStorage.setItem("greetandwin-lobby", id);
       await loadLobby(id);
     }
     setBusy(false);
@@ -227,7 +227,7 @@ function MatchmakingPage() {
     if (!lobby) return;
     setBusy(true);
     await supabase.rpc("mm_leave_lobby", { p_lobby_id:lobby.id });
-    window.sessionStorage.removeItem("recorn-lobby");
+    window.sessionStorage.removeItem("greetandwin-lobby");
     setLobby(null); setMembers([]); setPlayers([]);
     setBusy(false);
     loadOpen();
@@ -259,7 +259,7 @@ function MatchmakingPage() {
         p_lobby_id: lobby.id, p_screenshot_path: screenshotPath || null, p_players: payload,
       });
       if (e) throw e;
-      window.sessionStorage.removeItem("recorn-lobby");
+      window.sessionStorage.removeItem("greetandwin-lobby");
       setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setResultOpen(false); setResultScreenshot(null); setResultStats({});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось сохранить результат матча.");
