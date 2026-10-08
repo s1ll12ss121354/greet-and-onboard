@@ -6,10 +6,10 @@ import { nickToEmail } from "@/hooks/useAuth";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Вход и регистрация — GreetAndWin" },
-      { name: "description", content: "Регистрация на GreetAndWin по нику Roblox: один ник — один аккаунт." },
-      { property: "og:title", content: "Вход и регистрация — GreetAndWin" },
-      { property: "og:description", content: "Создайте аккаунт GreetAndWin по нику Roblox." },
+      { title: "Вход и регистрация — RECORN" },
+      { name: "description", content: "Регистрация на RECORN по нику Roblox: один ник — один аккаунт." },
+      { property: "og:title", content: "Вход и регистрация — RECORN" },
+      { property: "og:description", content: "Создайте аккаунт RECORN по нику Roblox." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
