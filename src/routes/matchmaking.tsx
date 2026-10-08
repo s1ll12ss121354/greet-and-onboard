@@ -21,9 +21,11 @@ type Lobby = {
   spectator_count: number;
   search_started_at: string;
   host_user_id: string | null;
+  selected_map: string | null;
 };
 
-type Member = { id: string; user_id: string; member_kind: "player" | "spectator"; joined_at: string };
+type Member = { id: string; user_id: string; member_kind: "player" | "spectator"; team: "alpha" | "bravo" | null; joined_at: string };
+type MapVote = { map_name: string; vote_count: number };
 type Player = { id: string; nickname: string; elo: number };
 
 const text = {
@@ -56,6 +58,8 @@ function MatchmakingPage() {
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [mapVotes, setMapVotes] = useState<MapVote[]>([]);
+  const [myMapVote, setMyMapVote] = useState<string | null>(null);
   const [openLobbies, setOpenLobbies] = useState<Lobby[]>([]);
   const [notifications, setNotifications] = useState<{id:string; message:string}[]>([]);
   const [busy, setBusy] = useState(false);
@@ -68,14 +72,18 @@ function MatchmakingPage() {
   const staff = roles.some((r) => ["host","moderator","admin"].includes(r));
 
   async function loadLobby(id: string | null) {
-    if (!id) { setLobby(null); setMembers([]); setPlayers([]); return; }
+    if (!id) { setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setMapVotes([]); setMyMapVote(null); return; }
     const [l, m] = await Promise.all([
-      supabase.from("match_lobbies").select("id,status,creator_id,search_started_at,host_user_id").eq("id",id).maybeSingle(),
+      supabase.from("match_lobbies").select("id,status,creator_id,search_started_at,host_user_id,selected_map").eq("id",id).maybeSingle(),
       supabase.from("match_lobby_members").select("id,user_id,member_kind,joined_at").eq("lobby_id",id).order("joined_at"),
     ]);
     if (l.error || !l.data) { setLobby(null); return; }
     const rows = (m.data ?? []) as Member[];
     const ids = rows.map((x) => x.user_id);
+    const { data: voteRows } = await supabase.from("match_lobby_map_votes").select("map_name,user_id").eq("lobby_id", id);
+    const counts = ["Mirage","Dust II","Nuke"].map((map_name) => ({ map_name, vote_count: (voteRows ?? []).filter((v) => v.map_name === map_name).length }));
+    setMapVotes(counts);
+    setMyMapVote((voteRows ?? []).find((v) => v.user_id === user?.id)?.map_name ?? null);
     const p = ids.length ? await supabase.from("profiles").select("id,nickname,elo").in("id",ids) : { data: [] };
     const mapped = (p.data ?? []) as Player[];
     setMembers(rows);
@@ -152,6 +160,14 @@ function MatchmakingPage() {
     setBusy(false);
   }
 
+  async function voteMap(mapName: string) {
+    if (!lobby || lobby.player_count < 10) return;
+    setError("");
+    const { error: e } = await supabase.rpc("mm_vote_map", { p_lobby_id: lobby.id, p_map_name: mapName });
+    if (e) setError(e.message || t.error);
+    else await loadLobby(lobby.id);
+  }
+
   async function joinLobby(id: string) {
     setBusy(true); setError("");
     const { error: e } = await supabase.rpc("mm_join_lobby", { p_lobby_id:id, p_spectator:false });
@@ -212,7 +228,7 @@ function MatchmakingPage() {
       });
       if (e) throw e;
       window.sessionStorage.removeItem("recorn-lobby");
-      setLobby(null); setMembers([]); setPlayers([]); setResultOpen(false); setResultScreenshot(null); setResultStats({});
+      setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setResultOpen(false); setResultScreenshot(null); setResultStats({});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось сохранить результат матча.");
     } finally {
@@ -272,7 +288,7 @@ function MatchmakingPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t.lobby}</div>
-                <h2 className="mt-1 font-display text-xl font-bold">{lobby.player_count}/5 {t.players}</h2>
+                <h2 className="mt-1 font-display text-xl font-bold">{lobby.player_count}/10 {t.players}</h2>
               </div>
               <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase text-primary">
                 {lobby.status === "host_needed" ? t.hostNeeded : lobby.status === "ready" ? t.ready : lobby.status === "waiting" ? t.waitingLobby : t.searching}
@@ -283,31 +299,69 @@ function MatchmakingPage() {
               {members.map((m) => {
                 const p = players.find((x) => x.id === m.user_id);
                 return <div key={m.id} className="flex items-center justify-between rounded-2xl border border-border bg-background/50 p-4">
-                  <div className="min-w-0"><div className="truncate font-bold">{p?.nickname ?? "Player"}</div><div className="text-xs text-muted-foreground">{p?.elo ?? "—"} ELO • {m.member_kind === "spectator" ? t.spectators : t.player}</div></div>
+                  <div className="min-w-0"><div className="truncate font-bold">{p?.nickname ?? "Player"}</div><div className="text-xs text-muted-foreground">{p?.elo ?? "—"} ELO • {m.member_kind === "spectator" ? t.spectators : m.team === "alpha" ? "За тебя" : m.team === "bravo" ? "Против тебя" : t.player}</div></div>
                   {lobby.host_user_id === m.user_id && <Crown className="size-5 text-primary"/>}
                 </div>;
               })}
-              {Array.from({length: Math.max(0,5-lobby.player_count)}).map((_,i)=><div key={i} className="flex items-center gap-3 rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground"><Users className="size-4"/> Slot {lobby.player_count+i+1}</div>)}
+              {Array.from({length: Math.max(0,10-lobby.player_count)}).map((_,i)=><div key={i} className="flex items-center gap-3 rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground"><Users className="size-4"/> Slot {lobby.player_count+i+1}</div>)}
             </div>
 
-            {lobby.player_count < 5 && lobby.status === "searching" && (
+            {lobby.player_count < 10 && lobby.status === "searching" && (
               <div className="mt-5 rounded-2xl border border-primary/20 bg-primary/5 p-4">
                 <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{t.range}</span><span className="font-display font-bold text-primary">{eloRange.low} — {eloRange.high}</span></div>
                 <div className="mt-2 text-xs text-muted-foreground">{waitMinutes} {t.minute}</div>
               </div>
             )}
 
-            {lobby.player_count >= 5 && lobby.host_user_id && hostPlayer && (
+            {lobby.player_count >= 10 && lobby.host_user_id && hostPlayer && (
               <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/10 p-4">
                 <div className="text-sm font-bold">{t.friend}</div>
                 <div className="mt-2 flex items-center justify-between gap-3"><span className="font-display text-lg font-bold">{hostPlayer.nickname}</span><Crown className="size-5 text-primary"/></div>
               </div>
             )}
-            {lobby.player_count >= 5 && !lobby.host_user_id && (
+            {lobby.player_count >= 10 && !lobby.host_user_id && (
               <div className="mt-5 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm">{t.noHost}</div>
             )}
 
-            {lobby.host_user_id === user.id && lobby.player_count >= 2 && (
+            {lobby.player_count >= 10 && (
+              <div className="mt-5 rounded-2xl border border-border bg-background/40 p-4">
+                <div className="font-display text-lg font-bold">Команды</div>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3">
+                    <div className="mb-2 text-sm font-bold text-primary">За тебя</div>
+                    <div className="space-y-2">{members.filter(m => m.member_kind === "player" && m.team === "alpha").map(m => {
+                      const p = players.find(x => x.id === m.user_id);
+                      return <div key={m.id} className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2"><span className="truncate font-semibold">{p?.nickname ?? "Player"}</span><span className="ml-2 shrink-0 text-xs text-muted-foreground">{p?.elo ?? "—"} ELO</span></div>;
+                    })}</div>
+                  </div>
+                  <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3">
+                    <div className="mb-2 text-sm font-bold text-destructive">Против тебя</div>
+                    <div className="space-y-2">{members.filter(m => m.member_kind === "player" && m.team === "bravo").map(m => {
+                      const p = players.find(x => x.id === m.user_id);
+                      return <div key={m.id} className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2"><span className="truncate font-semibold">{p?.nickname ?? "Player"}</span><span className="ml-2 shrink-0 text-xs text-muted-foreground">{p?.elo ?? "—"} ELO</span></div>;
+                    })}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {lobby.player_count >= 10 && (
+              <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div><div className="font-display text-lg font-bold">Выбор карты</div><div className="text-xs text-muted-foreground">{lobby.selected_map ? "Карта выбрана." : "Выберите одну из трёх карт."}</div></div>
+                  {lobby.selected_map && <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary">{lobby.selected_map}</span>}
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {["Mirage","Dust II","Nuke"].map((mapName) => <button key={mapName} disabled={Boolean(lobby.selected_map) || Boolean(busy)} onClick={() => voteMap(mapName)} className={`rounded-2xl border p-4 text-left transition ${myMapVote === mapName ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-secondary"}`}>
+                    <div className="font-display text-lg font-bold">{mapName}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{mapVotes.find(v => v.map_name === mapName)?.vote_count ?? 0} голосов</div>
+                    {myMapVote === mapName && <div className="mt-2 text-xs font-bold text-primary">Твой выбор</div>}
+                  </button>)}
+                </div>
+              </div>
+            )}
+
+            {lobby.host_user_id === user.id && lobby.player_count >= 10 && (
               <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><div className="font-bold">Результат матча</div><div className="mt-1 text-xs text-muted-foreground">Загрузите скрин хоста и перенесите K/D. ELO посчитает сервер.</div></div>
@@ -321,7 +375,7 @@ function MatchmakingPage() {
           <div className="rounded-3xl border border-border bg-card p-5 sm:p-6">
             <div className="flex items-center gap-2 font-display font-bold"><Users className="size-4 text-primary"/>{t.open}</div>
             <div className="mt-4 space-y-2">
-              {openLobbies.filter((x) => x.id !== lobby.id).map((x) => <div key={x.id} className="rounded-2xl border border-border p-3"><div className="flex items-center justify-between gap-2"><span className="font-bold">{x.player_count}/5</span><span className="text-xs text-muted-foreground">{x.status}</span></div><div className="mt-2 flex gap-2"><button disabled={busy || x.player_count>=5} onClick={() => joinLobby(x.id)} className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-40">{t.join}</button>{staff && <button disabled={busy} onClick={() => joinAsSpectator(x.id)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold"><Shield className="inline size-3"/> {t.spectators}</button>}</div></div>)}
+              {openLobbies.filter((x) => x.id !== lobby.id).map((x) => <div key={x.id} className="rounded-2xl border border-border p-3"><div className="flex items-center justify-between gap-2"><span className="font-bold">{x.player_count}/10</span><span className="text-xs text-muted-foreground">{x.status}</span></div><div className="mt-2 flex gap-2"><button disabled={busy || x.player_count>=10} onClick={() => joinLobby(x.id)} className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-40">{t.join}</button>{staff && <button disabled={busy} onClick={() => joinAsSpectator(x.id)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold"><Shield className="inline size-3"/> {t.spectators}</button>}</div></div>)}
               {openLobbies.filter((x) => x.id !== lobby.id).length === 0 && <p className="text-sm text-muted-foreground">—</p>}
             </div>
           </div>
