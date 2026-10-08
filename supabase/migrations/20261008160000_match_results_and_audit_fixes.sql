@@ -88,7 +88,7 @@ set search_path = ''
 as $$
 declare
   uid uuid := (select auth.uid());
-  result_id uuid;
+  v_result_id uuid;
   lobby_host uuid;
   lobby_status text;
   item jsonb;
@@ -123,7 +123,7 @@ begin
 
   insert into public.match_results(lobby_id, submitted_by, screenshot_path)
   values (p_lobby_id, uid, nullif(left(coalesce(p_screenshot_path,''), 500), ''))
-  returning id into result_id;
+  returning id into v_result_id;
 
   for item in select * from jsonb_array_elements(p_players)
   loop
@@ -144,7 +144,7 @@ begin
     delta := greatest(-50, least(50, base_delta + round(greatest(-2, least(2, kd - 1)) * 10)::integer));
 
     insert into public.match_result_players(result_id,user_id,kills,deaths,won,kd,elo_delta)
-    values(result_id,player_id,kills,deaths,won,kd,delta);
+    values(v_result_id,player_id,kills,deaths,won,kd,delta);
 
     update public.profiles
     set elo = greatest(0, elo + delta),
@@ -153,7 +153,7 @@ begin
     where id = player_id;
   end loop;
 
-  if (select count(*) from public.match_result_players where match_result_players.result_id = submit_match_result.result_id)
+  if (select count(*) from public.match_result_players where match_result_players.result_id = v_result_id)
      <> (select count(*) from public.match_lobby_members where lobby_id = p_lobby_id and member_kind = 'player') then
     raise exception 'RESULT_MISSING_PLAYERS';
   end if;
@@ -164,13 +164,13 @@ begin
 
   insert into public.activity_logs(user_id,event_type,path,details)
   values(uid,'match_result_submitted','/matchmaking',
-    jsonb_build_object('lobby_id',p_lobby_id,'result_id',result_id));
+    jsonb_build_object('lobby_id',p_lobby_id,'result_id',v_result_id));
 
-  return result_id;
+  return v_result_id;
 exception
   when others then
-    if result_id is not null then
-      delete from public.match_results where id = result_id;
+    if v_result_id is not null then
+      delete from public.match_results where id = v_result_id;
     end if;
     raise;
 end;
