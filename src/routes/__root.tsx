@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
+  useRouterState,
   createRootRouteWithContext,
   useRouter,
   HeadContent,
@@ -13,6 +14,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSidebar } from "../components/AppSidebar";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -123,6 +126,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-background">
+        <ActivityTracker />
         <AppSidebar />
         <main className="ml-60 min-h-screen p-6 lg:p-8">
           <Outlet />
@@ -130,4 +134,20 @@ function RootComponent() {
       </div>
     </QueryClientProvider>
   );
+}
+
+function ActivityTracker() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    void supabase.rpc("log_activity", {
+      p_event_type: "page_view",
+      p_path: pathname,
+      p_details: {},
+    });
+  }, [user?.id, pathname]);
+
+  return null;
 }
