@@ -41,21 +41,6 @@ function HostPage() {
     }
     setSending(true);
 
-    const { data: existing, error: existingError } = await supabase
-      .from("host_applications").select("id,status").eq("user_id", user.id)
-      .in("status", ["pending", "approved"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
-
-    if (existingError) {
-      setErr("Не удалось проверить предыдущую заявку. Попробуйте ещё раз.");
-      setSending(false);
-      return;
-    }
-    if (existing) {
-      setStatus(existing.status as typeof status);
-      setSending(false);
-      return;
-    }
-
     const { data: applicationId, error } = await supabase.rpc("submit_host_application", {
       p_vip: vip === "yes",
       p_reason: reason.trim(),
@@ -63,17 +48,33 @@ function HostPage() {
       p_telegram: telegram.trim() || null,
     });
 
-    if (error || !applicationId) {
-      setErr(error?.message?.includes("ACTIVE_APPLICATION_EXISTS")
-        ? "У вас уже есть активная заявка."
-        : error?.message?.includes("CONTACT_REQUIRED")
-          ? "Укажите Discord или Telegram."
-          : "Заявка не отправлена. Проверьте соединение и попробуйте снова.");
+    if (error) {
+      const message = String(error.message || "").toUpperCase();
+      if (message.includes("ACTIVE_APPLICATION_EXISTS")) {
+        setStatus("pending");
+        setErr("У вас уже есть активная заявка.");
+      } else if (message.includes("CONTACT_REQUIRED")) {
+        setErr("Укажите Discord или Telegram.");
+      } else if (message.includes("REASON_TOO_SHORT")) {
+        setErr("Причина должна содержать минимум 20 символов.");
+      } else if (message.includes("PROFILE_REQUIRED")) {
+        setErr("Профиль ещё не загрузился. Обновите страницу и попробуйте снова.");
+      } else if (message.includes("AUTH_REQUIRED") || message.includes("JWT")) {
+        setErr("Сессия истекла. Выйдите из аккаунта и войдите снова.");
+      } else if (message.includes("FUNCTION") && message.includes("DOES NOT EXIST")) {
+        setErr("Серверная часть заявки ещё не обновлена. Нужно применить миграцию Supabase.");
+      } else {
+        setErr("Заявка не отправлена: " + (error.message || "ошибка сервера"));
+      }
+    } else if (!applicationId) {
+      setErr("Сервер не вернул ID заявки. Попробуйте ещё раз.");
     } else {
       setStatus("pending");
       setVip("");
       setReason("");
       setRules(false);
+      setDiscord("");
+      setTelegram("");
     }
     setSending(false);
   }
