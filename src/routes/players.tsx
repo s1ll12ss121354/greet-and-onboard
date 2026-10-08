@@ -6,9 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/players")({
   head: () => ({
     meta: [
-      { title: "Лидерборд ELO — GreetAndWin" },
-      { name: "description", content: "Глобальный лидерборд игроков Block Strike по ELO на GreetAndWin." },
-      { property: "og:title", content: "Лидерборд ELO — GreetAndWin" },
+      { title: "Лидерборд ELO — ReCorN" },
+      { name: "description", content: "Глобальный лидерборд игроков Block Strike по ELO на ReCorN." },
+      { property: "og:title", content: "Лидерборд ELO — ReCorN" },
       { property: "og:description", content: "Сравнивай игроков Block Strike по ELO." },
     ],
   }),
