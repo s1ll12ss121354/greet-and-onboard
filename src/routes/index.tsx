@@ -4,8 +4,8 @@ import { ArrowUpRight, Crosshair, Trophy, Users, Swords, Crown, Zap, Heart, Acti
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GreetAndWin — Block Strike Competitive" },
-      { name: "description", content: "GreetAndWin — соревновательная платформа Block Strike с ELO, матчами и честной игрой." },
+      { title: "RECORN — Block Strike Competitive" },
+      { name: "description", content: "RECORN — соревновательная платформа Block Strike с ELO, матчами и честной игрой." },
     ],
   }),
   component: HomePage,
@@ -38,7 +38,7 @@ function HomePage() {
               Твой <span className="text-primary">рейтинг.</span>
             </h1>
             <p className="mt-7 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
-              GreetAndWin — соревновательная сеть для Block Strike. Начни с <strong className="text-foreground">1000 ELO</strong>, находи игру и доказывай уровень матч за матчем.
+              RECORN — соревновательная сеть для Block Strike. Начни с <strong className="text-foreground">1000 ELO</strong>, находи игру и доказывай уровень матч за матчем.
             </p>
             <div className="mt-9 flex flex-wrap gap-2.5">
               <Link to="/matchmaking" className="group inline-flex items-center gap-3 bg-primary px-5 py-3.5 text-xs font-extrabold uppercase tracking-wide text-primary-foreground transition hover:brightness-105">
@@ -67,7 +67,7 @@ function HomePage() {
           <div className="relative hidden border-l border-border lg:flex lg:flex-col lg:justify-between p-8">
             <div>
               <div className="text-[10px] font-extrabold uppercase tracking-[.24em] text-muted-foreground">GREET / AND / WIN</div>
-              <div className="mt-8 font-display text-[140px] font-extrabold leading-none tracking-[-.1em] text-primary/10">GW</div>
+              <div className="mt-8 font-display text-[140px] font-extrabold leading-none tracking-[-.1em] text-primary/10">RC</div>
             </div>
             <div className="border-t border-border pt-6">
               <div className="flex items-center gap-3">
@@ -108,7 +108,7 @@ function HomePage() {
         <div className="bg-primary p-7 text-primary-foreground sm:p-9">
           <Heart className="size-5" />
           <h3 className="mt-12 font-display text-xl font-extrabold">Поддержать проект</h3>
-          <p className="mt-2 text-sm leading-6 opacity-75">Помоги развивать GreetAndWin и получи приоритет в репортах и заявках.</p>
+          <p className="mt-2 text-sm leading-6 opacity-75">Помоги развивать RECORN и получи приоритет в репортах и заявках.</p>
           <Link to="/support" className="mt-6 inline-flex items-center gap-2 border border-primary-foreground/30 px-4 py-3 text-xs font-extrabold uppercase transition hover:bg-primary-foreground/10">
             Подробнее <ArrowUpRight className="size-4" />
           </Link>
@@ -116,8 +116,8 @@ function HomePage() {
       </section>
 
       <footer className="flex flex-col gap-2 border-t border-border pt-5 text-[10px] font-bold uppercase tracking-[.18em] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <span>GreetAndWin / Block Strike competitive network</span>
-        <span>GW-01 · Fair play · ELO</span>
+        <span>RECORN / Block Strike competitive network</span>
+        <span>RC-01 · Fair play · ELO</span>
       </footer>
     </div>
   );
