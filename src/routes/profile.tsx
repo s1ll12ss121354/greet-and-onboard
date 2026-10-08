@@ -14,9 +14,9 @@ import {
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Профиль — ReCorN" },
-      { name: "description", content: "Профиль игрока ReCorN: статистика, ELO и история матчей Block Strike." },
-      { property: "og:title", content: "Профиль — ReCorN" },
+      { title: "Профиль — GreetAndWin" },
+      { name: "description", content: "Профиль игрока GreetAndWin: статистика, ELO и история матчей Block Strike." },
+      { property: "og:title", content: "Профиль — GreetAndWin" },
       { property: "og:description", content: "Статистика, ELO и история матчей игрока Block Strike." },
     ],
   }),
@@ -43,17 +43,17 @@ function ProfilePage() {
   ];
   return (
     <div className="mx-auto max-w-5xl">
-      <section className="banner-gradient overflow-hidden rounded-2xl border border-border">
-        <div className="grid-bg h-28" />
+      <section className="overflow-hidden border border-border bg-card">
+        <div className="h-24 border-b border-border bg-[radial-gradient(circle_at_80%_20%,rgba(180,255,80,.14),transparent_38%)]" />
         <div className="flex flex-col gap-6 px-6 pb-6 lg:flex-row lg:items-end lg:px-8">
-          <div className="-mt-14 flex items-end gap-5">
-            <div className="flex size-28 shrink-0 items-center justify-center rounded-2xl border-2 border-primary bg-secondary font-display text-3xl font-bold text-primary">
+          <div className="-mt-12 flex items-end gap-5">
+            <div className="flex size-24 shrink-0 items-center justify-center rounded-md border border-primary/50 bg-primary/10 font-display text-2xl font-extrabold text-primary shadow-[0_0_35px_rgba(180,255,80,.12)]">
               {PLAYER.nickname.slice(0, 2).toUpperCase()}
             </div>
             <div className="pb-1">
               <div className="flex items-center gap-3">
                 <h1 className="font-display text-2xl font-bold lg:text-3xl">{PLAYER.nickname}</h1>
-                <span className="rounded-md border border-primary/50 bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                <span className="border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-primary">
                   LVL {PLAYER.level}
                 </span>
               </div>
@@ -64,8 +64,8 @@ function ProfilePage() {
                 Профиль Block Strike
                 <ExternalLink className="size-3.5" />
               </a>
-              <div className="mt-1 flex gap-2 text-xs">
-                {roles.map((r) => <span key={r} className="rounded bg-primary/15 px-2 py-0.5 font-bold uppercase text-primary">{r}</span>)}
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                {roles.map((r) => <span key={r} className="rounded-sm bg-primary/10 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-primary">{r}</span>)}
                 <button onClick={() => supabase.auth.signOut()} className="text-muted-foreground hover:text-destructive">Выйти</button>
               </div>
             </div>
@@ -83,7 +83,7 @@ function ProfilePage() {
             </div>
             <div className="text-right">
               <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">ELO</div>
-              <div className="font-display text-4xl font-bold text-primary text-glow-primary">{PLAYER.elo}</div>
+              <div className="font-display text-5xl font-extrabold tracking-tight text-primary text-glow-primary">{PLAYER.elo}</div>
             </div>
           </div>
         </div>
