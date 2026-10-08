@@ -100,6 +100,7 @@ function AdminPage() {
   const [logins, setLogins] = useState<LoginEvent[]>([]);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [banDialogReport, setBanDialogReport] = useState<Report | null>(null);
 
   async function load() {
     if (!allowed) return;
@@ -168,14 +169,21 @@ function AdminPage() {
     await refresh(error ? "Ошибка: не удалось обработать заявку" : approve ? app.roblox_nick + " теперь хост" : "Заявка отклонена");
   }
 
-  async function reviewReport(report: Report, status: "resolved" | "rejected") {
+  async function reviewReport(report: Report, status: "resolved" | "rejected", banMinutes: number | null = null, banReason = "") {
+    if (status === "resolved" && banMinutes === null && !banReason) {
+      setBanDialogReport(report);
+      return;
+    }
     setBusy(true);
     const { error } = await supabase.rpc("admin_set_report_status", {
       p_report_id: report.id,
       p_status: status,
+      p_ban_minutes: status === "resolved" ? banMinutes : null,
+      p_ban_reason: status === "resolved" ? banReason : null,
     });
     setBusy(false);
-    await refresh(error ? "Ошибка: не удалось обработать жалобу" : status === "resolved" ? "Жалоба одобрена и закрыта" : "Жалоба отклонена");
+    if (!error) setBanDialogReport(null);
+    await refresh(error ? "Ошибка: не удалось обработать жалобу" : status === "resolved" ? "Жалоба одобрена и бан применён" : "Жалоба отклонена");
   }
   async function toggleRole(p: Profile, role: "moderator" | "host") {
     setBusy(true);
@@ -334,6 +342,28 @@ function AdminPage() {
       )}
     </div>
   );
+}
+
+function BanDialog({ report, busy, onCancel, onConfirm }: { report: Report; busy: boolean; onCancel: () => void; onConfirm: (minutes: number | null, reason: string) => void }) {
+  const [minutes, setMinutes] = useState<number | null>(1440);
+  const [reason, setReason] = useState("");
+  const options = [[60, "1 час"], [1440, "1 день"], [4320, "3 дня"], [10080, "7 дней"], [43200, "30 дней"], [null, "Навсегда"]] as const;
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true">
+    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl">
+      <h2 className="text-lg font-bold">Одобрение жалобы</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Игрок: <b>{report.target_nick}</b></p>
+      <label className="mt-4 block text-sm font-semibold">Срок бана</label>
+      <select value={minutes ?? "forever"} onChange={(e) => setMinutes(e.target.value === "forever" ? null : Number(e.target.value))} className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+        {options.map(([value, label]) => <option key={label} value={value ?? "forever"}>{label}</option>)}
+      </select>
+      <label className="mt-4 block text-sm font-semibold">Причина <span className="text-destructive">*</span></label>
+      <textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} rows={4} placeholder="Укажите причину бана..." className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+      <div className="mt-4 flex justify-end gap-2">
+        <button disabled={busy} onClick={onCancel} className={btn + " bg-secondary"}>Отмена</button>
+        <button disabled={busy || !reason.trim()} onClick={() => onConfirm(minutes, reason.trim())} className={btn + " bg-destructive text-destructive-foreground"}>Забанить и одобрить</button>
+      </div>
+    </div>
+  </div>;
 }
 
 function ReportsSection({
