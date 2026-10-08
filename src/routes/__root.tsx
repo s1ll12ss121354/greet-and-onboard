@@ -128,7 +128,7 @@ function RootComponent() {
       <div className="min-h-screen bg-background">
         <ActivityTracker />
         <AppSidebar />
-        <main className="ml-0 min-h-screen min-w-0 px-3 pb-6 pt-20 sm:px-4 sm:pb-8 lg:ml-64 lg:px-8 lg:pb-8 lg:pt-8">
+        <main className="min-h-screen min-w-0 px-3 pb-8 pt-24 sm:px-5 lg:px-8 lg:pt-28">
           <Outlet />
         </main>
       </div>
