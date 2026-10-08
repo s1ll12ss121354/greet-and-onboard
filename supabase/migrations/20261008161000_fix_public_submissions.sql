@@ -39,7 +39,8 @@ begin
   )
   returning id into app_id;
 
-  perform public.log_activity('host_application_submitted','/host',jsonb_build_object('application_id',app_id));
+  insert into public.activity_logs(user_id,event_type,path,details)
+  values(uid,'host_application_submitted','/host',jsonb_build_object('application_id',app_id));
   return app_id;
 end;
 $$;
@@ -70,7 +71,8 @@ begin
   values(uid,left(trim(p_target_nick),100),left(trim(p_reason),100),left(trim(p_details),4000),'open')
   returning id into report_id;
 
-  perform public.log_activity('report_submitted','/reports',jsonb_build_object('report_id',report_id,'target_nick',left(trim(p_target_nick),100)));
+  insert into public.activity_logs(user_id,event_type,path,details)
+  values(uid,'report_submitted','/reports',jsonb_build_object('report_id',report_id,'target_nick',left(trim(p_target_nick),100)));
   return report_id;
 end;
 $$;
