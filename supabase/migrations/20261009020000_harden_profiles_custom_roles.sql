@@ -277,6 +277,237 @@ before insert or update or delete on public.user_custom_roles
 for each row
 execute function public.protect_user_custom_role_writes();
 
+-- Recreate the admin RPCs here so this hardening migration is self-contained
+-- even if an earlier custom-role migration was only partially applied.
+
+create or replace function public.admin_create_custom_role(
+  p_name text,
+  p_color text default '#7c3aed',
+  p_description text default ''
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  uid uuid := (select auth.uid());
+  role_id uuid;
+  clean_name text := trim(coalesce(p_name, ''));
+  clean_color text := trim(coalesce(p_color, '#7c3aed'));
+begin
+  if uid is null or not public.has_role(uid, 'admin') then
+    raise exception 'ADMIN_ONLY';
+  end if;
+
+  if clean_name !~ '^[^[:cntrl:]]{2,40}revoke execute on function public.admin_create_custom_role(text,text,text) from public, anon;
+revoke execute on function public.admin_assign_custom_role(uuid,uuid) from public, anon;
+revoke execute on function public.admin_remove_custom_role(uuid,uuid) from public, anon;
+revoke execute on function public.admin_delete_custom_role(uuid) from public, anon;
+
+grant execute on function public.admin_create_custom_role(text,text,text) to authenticated;
+grant execute on function public.admin_assign_custom_role(uuid,uuid) to authenticated;
+grant execute on function public.admin_remove_custom_role(uuid,uuid) to authenticated;
+grant execute on function public.admin_delete_custom_role(uuid) to authenticated;
+
+notify pgrst, 'reload schema'; then
+    raise exception 'INVALID_ROLE_NAME';
+  end if;
+
+  if clean_color !~ '^#[0-9A-Fa-f]{6}revoke execute on function public.admin_create_custom_role(text,text,text) from public, anon;
+revoke execute on function public.admin_assign_custom_role(uuid,uuid) from public, anon;
+revoke execute on function public.admin_remove_custom_role(uuid,uuid) from public, anon;
+revoke execute on function public.admin_delete_custom_role(uuid) from public, anon;
+
+grant execute on function public.admin_create_custom_role(text,text,text) to authenticated;
+grant execute on function public.admin_assign_custom_role(uuid,uuid) to authenticated;
+grant execute on function public.admin_remove_custom_role(uuid,uuid) to authenticated;
+grant execute on function public.admin_delete_custom_role(uuid) to authenticated;
+
+notify pgrst, 'reload schema'; then
+    raise exception 'INVALID_ROLE_COLOR';
+  end if;
+
+  insert into public.custom_roles(name, color, description, created_by)
+  values(
+    clean_name,
+    clean_color,
+    left(coalesce(p_description, ''), 160),
+    uid
+  )
+  returning id into role_id;
+
+  begin
+    insert into public.activity_logs(
+      user_id,
+      event_type,
+      path,
+      details
+    )
+    values(
+      uid,
+      'custom_role_created',
+      '/admin',
+      jsonb_build_object(
+        'role_id', role_id,
+        'name', clean_name
+      )
+    );
+  exception
+    when others then
+      null;
+  end;
+
+  return role_id;
+end;
+$;
+
+create or replace function public.admin_assign_custom_role(
+  p_user_id uuid,
+  p_role_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  uid uuid := (select auth.uid());
+begin
+  if uid is null or not public.has_role(uid, 'admin') then
+    raise exception 'ADMIN_ONLY';
+  end if;
+
+  if not exists (
+    select 1
+    from public.custom_roles
+    where id = p_role_id
+  ) then
+    raise exception 'CUSTOM_ROLE_NOT_FOUND';
+  end if;
+
+  if not exists (
+    select 1
+    from public.profiles
+    where id = p_user_id
+  ) then
+    raise exception 'PLAYER_NOT_FOUND';
+  end if;
+
+  insert into public.user_custom_roles(user_id, role_id)
+  values(p_user_id, p_role_id)
+  on conflict(user_id, role_id) do nothing;
+
+  begin
+    insert into public.activity_logs(
+      user_id,
+      event_type,
+      path,
+      details
+    )
+    values(
+      uid,
+      'custom_role_assigned',
+      '/admin',
+      jsonb_build_object(
+        'target_user_id', p_user_id,
+        'role_id', p_role_id
+      )
+    );
+  exception
+    when others then
+      null;
+  end;
+
+  return true;
+end;
+$;
+
+create or replace function public.admin_remove_custom_role(
+  p_user_id uuid,
+  p_role_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  uid uuid := (select auth.uid());
+begin
+  if uid is null or not public.has_role(uid, 'admin') then
+    raise exception 'ADMIN_ONLY';
+  end if;
+
+  delete from public.user_custom_roles
+  where user_id = p_user_id
+    and role_id = p_role_id;
+
+  begin
+    insert into public.activity_logs(
+      user_id,
+      event_type,
+      path,
+      details
+    )
+    values(
+      uid,
+      'custom_role_removed',
+      '/admin',
+      jsonb_build_object(
+        'target_user_id', p_user_id,
+        'role_id', p_role_id
+      )
+    );
+  exception
+    when others then
+      null;
+  end;
+
+  return true;
+end;
+$;
+
+create or replace function public.admin_delete_custom_role(
+  p_role_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  uid uuid := (select auth.uid());
+begin
+  if uid is null or not public.has_role(uid, 'admin') then
+    raise exception 'ADMIN_ONLY';
+  end if;
+
+  delete from public.custom_roles
+  where id = p_role_id;
+
+  begin
+    insert into public.activity_logs(
+      user_id,
+      event_type,
+      path,
+      details
+    )
+    values(
+      uid,
+      'custom_role_deleted',
+      '/admin',
+      jsonb_build_object('role_id', p_role_id)
+    );
+  exception
+    when others then
+      null;
+  end;
+
+  return true;
+end;
+$;
+
 -- Only the approved admin RPCs are allowed to mutate the custom-role tables.
 revoke execute on function public.admin_create_custom_role(text,text,text) from public, anon;
 revoke execute on function public.admin_assign_custom_role(uuid,uuid) from public, anon;
