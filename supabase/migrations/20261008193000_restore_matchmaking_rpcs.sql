@@ -1,97 +1,246 @@
--- Restore matchmaking RPCs used by src/routes/matchmaking.tsx.
--- This migration is intentionally defensive: it creates the RPCs with the
--- current match_lobbies schema and grants authenticated users access.
+-- ReCorN: restore the RPCs used by the matchmaking page.
+-- IMPORTANT: PostgREST resolves functions by exact signature. We explicitly
+-- remove stale overloads and recreate the zero-argument functions expected by
+-- supabase.rpc("mm_search_lobby") / supabase.rpc("mm_create_lobby").
+
+drop function if exists public.mm_search_lobby();
+drop function if exists public.mm_create_lobby();
+drop function if exists public.mm_open_lobbies();
 
 create or replace function public.mm_search_lobby()
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
-  v_lobby uuid;
+  uid uuid := auth.uid();
+  player_elo integer;
+  lobby_id uuid;
+  member_count integer;
 begin
-  if auth.uid() is null then
+  if uid is null then
     raise exception 'AUTH_REQUIRED';
   end if;
 
-  select ml.id
-    into v_lobby
-  from public.match_lobbies ml
-  join public.match_lobby_members mm on mm.lobby_id = ml.id
-  where mm.user_id = auth.uid()
-    and mm.member_kind = 'player'
-    and ml.status in ('searching','waiting','ready','host_needed')
-  order by ml.search_started_at desc
-  limit 1;
+  select p.elo
+    into player_elo
+  from public.profiles p
+  where p.id = uid
+    and not p.banned;
 
-  if v_lobby is not null then
-    return v_lobby;
+  if player_elo is null then
+    raise exception 'PROFILE_REQUIRED';
   end if;
 
-  insert into public.match_lobbies (creator_id, status, search_started_at)
-  values (auth.uid(), 'searching', now())
-  returning id into v_lobby;
+  -- Never create a second active lobby for the same player.
+  select lm.lobby_id
+    into lobby_id
+  from public.match_lobby_members lm
+  join public.match_lobbies l on l.id = lm.lobby_id
+  where lm.user_id = uid
+    and lm.member_kind = 'player'
+    and l.status in ('waiting','searching','full','host_needed','ready')
+  order by lm.joined_at desc
+  limit 1;
 
-  insert into public.match_lobby_members (lobby_id, user_id, member_kind)
-  values (v_lobby, auth.uid(), 'player');
+  if lobby_id is not null then
+    return lobby_id;
+  end if;
 
-  return v_lobby;
-exception
-  when undefined_table then
-    raise exception 'MATCHMAKING_TABLES_MISSING';
+  -- Prefer an existing searching lobby whose ELO is within the current
+  -- expanding range. The lobby target is 10 players for the 5v5 flow.
+  select l.id
+    into lobby_id
+  from public.match_lobbies l
+  where l.status in ('waiting','searching')
+    and l.search_started_at >= now() - interval '30 minutes'
+    and (
+      select count(*)
+      from public.match_lobby_members m
+      where m.lobby_id = l.id
+        and m.member_kind = 'player'
+    ) < l.target_players
+    and (
+      select coalesce(avg(p2.elo), player_elo)
+      from public.match_lobby_members m2
+      join public.profiles p2 on p2.id = m2.user_id
+      where m2.lobby_id = l.id
+        and m2.member_kind = 'player'
+    ) between
+      player_elo - 100 - (
+        300 * floor(extract(epoch from (now() - l.search_started_at)) / 60)
+      )
+      and
+      player_elo + 500 + (
+        500 * floor(extract(epoch from (now() - l.search_started_at)) / 60)
+      )
+  order by l.created_at
+  limit 1;
+
+  if lobby_id is null then
+    insert into public.match_lobbies (
+      creator_id,
+      status,
+      target_players,
+      max_players,
+      search_started_at,
+      last_activity_at
+    )
+    values (
+      uid,
+      'searching',
+      10,
+      10,
+      now(),
+      now()
+    )
+    returning id into lobby_id;
+
+    insert into public.match_lobby_members (
+      lobby_id,
+      user_id,
+      member_kind
+    )
+    values (
+      lobby_id,
+      uid,
+      'player'
+    );
+  else
+    insert into public.match_lobby_members (
+      lobby_id,
+      user_id,
+      member_kind
+    )
+    values (
+      lobby_id,
+      uid,
+      'player'
+    )
+    on conflict (lobby_id, user_id) do nothing;
+
+    update public.match_lobbies
+    set last_activity_at = now()
+    where id = lobby_id;
+  end if;
+
+  select count(*)
+    into member_count
+  from public.match_lobby_members m
+  where m.lobby_id = lobby_id
+    and m.member_kind = 'player';
+
+  if member_count >= 10 then
+    update public.match_lobbies
+    set status = case
+      when host_user_id is null then 'host_needed'
+      else 'ready'
+    end,
+    last_activity_at = now()
+    where id = lobby_id;
+  else
+    update public.match_lobbies
+    set status = 'searching',
+        last_activity_at = now()
+    where id = lobby_id;
+  end if;
+
+  return lobby_id;
 end;
 $$;
-
-grant execute on function public.mm_search_lobby() to authenticated;
 
 create or replace function public.mm_create_lobby()
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
-  v_lobby uuid;
+  uid uuid := auth.uid();
+  lobby_id uuid;
 begin
-  if auth.uid() is null then raise exception 'AUTH_REQUIRED'; end if;
+  if uid is null then
+    raise exception 'AUTH_REQUIRED';
+  end if;
 
-  select id into v_lobby
-  from public.match_lobbies
-  where creator_id = auth.uid()
-    and status in ('searching','waiting','ready','host_needed')
-  order by created_at desc
+  if not exists (
+    select 1
+    from public.profiles p
+    where p.id = uid
+      and not p.banned
+  ) then
+    raise exception 'PROFILE_REQUIRED';
+  end if;
+
+  -- Reuse the player's existing active lobby instead of creating duplicates.
+  select lm.lobby_id
+    into lobby_id
+  from public.match_lobby_members lm
+  join public.match_lobbies l on l.id = lm.lobby_id
+  where lm.user_id = uid
+    and lm.member_kind = 'player'
+    and l.status in ('waiting','searching','full','host_needed','ready')
+  order by lm.joined_at desc
   limit 1;
 
-  if v_lobby is not null then return v_lobby; end if;
+  if lobby_id is not null then
+    return lobby_id;
+  end if;
 
-  insert into public.match_lobbies (creator_id, status, search_started_at)
-  values (auth.uid(), 'waiting', now())
-  returning id into v_lobby;
+  insert into public.match_lobbies (
+    creator_id,
+    status,
+    target_players,
+    max_players,
+    search_started_at,
+    last_activity_at
+  )
+  values (
+    uid,
+    'waiting',
+    10,
+    10,
+    now(),
+    now()
+  )
+  returning id into lobby_id;
 
-  insert into public.match_lobby_members (lobby_id, user_id, member_kind)
-  values (v_lobby, auth.uid(), 'player');
+  insert into public.match_lobby_members (
+    lobby_id,
+    user_id,
+    member_kind
+  )
+  values (
+    lobby_id,
+    uid,
+    'player'
+  );
 
-  return v_lobby;
+  return lobby_id;
 end;
 $$;
-
-grant execute on function public.mm_create_lobby() to authenticated;
 
 create or replace function public.mm_open_lobbies()
 returns setof public.match_lobbies
 language sql
 security definer
-set search_path = public
+set search_path = ''
 as $$
-  select ml.*
-  from public.match_lobbies ml
-  where ml.status in ('searching','waiting','ready','host_needed')
-  order by ml.created_at desc
+  select l.*
+  from public.match_lobbies l
+  where l.status in ('waiting','searching','full','host_needed','ready')
+  order by l.created_at desc
   limit 50
 $$;
 
+revoke execute on function public.mm_search_lobby() from public, anon;
+revoke execute on function public.mm_create_lobby() from public, anon;
+revoke execute on function public.mm_open_lobbies() from public, anon;
+
+grant execute on function public.mm_search_lobby() to authenticated;
+grant execute on function public.mm_create_lobby() to authenticated;
 grant execute on function public.mm_open_lobbies() to authenticated;
 
--- PostgREST caches RPC signatures; force a schema reload after restoring the functions.
+-- Force PostgREST to refresh its function/schema cache after the migration.
 notify pgrst, 'reload schema';
