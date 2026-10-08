@@ -14,9 +14,9 @@ import {
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Профиль — GreetAndWin" },
-      { name: "description", content: "Профиль игрока GreetAndWin: статистика, ELO и история матчей Block Strike." },
-      { property: "og:title", content: "Профиль — GreetAndWin" },
+      { title: "Профиль — RECORN" },
+      { name: "description", content: "Профиль игрока RECORN: статистика, ELO и история матчей Block Strike." },
+      { property: "og:title", content: "Профиль — RECORN" },
       { property: "og:description", content: "Статистика, ELO и история матчей игрока Block Strike." },
     ],
   }),
