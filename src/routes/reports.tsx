@@ -7,10 +7,10 @@ import { useAuth } from "@/hooks/useAuth";
 export const Route = createFileRoute("/reports")({
   head: () => ({
     meta: [
-      { title: "Жалобы — ReCorN" },
-      { name: "description", content: "Отправьте жалобу на игрока Block Strike на ReCorN." },
-      { property: "og:title", content: "Жалобы — ReCorN" },
-      { property: "og:description", content: "Отправьте жалобу на игрока Block Strike на ReCorN." },
+      { title: "Жалобы — GreetAndWin" },
+      { name: "description", content: "Отправьте жалобу на игрока Block Strike на GreetAndWin." },
+      { property: "og:title", content: "Жалобы — GreetAndWin" },
+      { property: "og:description", content: "Отправьте жалобу на игрока Block Strike на GreetAndWin." },
     ],
   }),
   component: ReportsPage,
