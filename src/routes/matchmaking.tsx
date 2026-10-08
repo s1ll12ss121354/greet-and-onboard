@@ -62,6 +62,7 @@ function MatchmakingPage() {
   const [myMapVote, setMyMapVote] = useState<string | null>(null);
   const [readyStates, setReadyStates] = useState<Record<string, boolean>>({});
   const [readyDeadline, setReadyDeadline] = useState<number | null>(null);
+  const [readySeconds, setReadySeconds] = useState(60);
   const [openLobbies, setOpenLobbies] = useState<Lobby[]>([]);
   const [notifications, setNotifications] = useState<{id:string; message:string}[]>([]);
   const [busy, setBusy] = useState(false);
@@ -74,7 +75,7 @@ function MatchmakingPage() {
   const staff = roles.some((r) => ["host","moderator","admin"].includes(r));
 
   async function loadLobby(id: string | null) {
-    if (!id) { setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setReadyStates({}); setReadyDeadline(null); return; }
+    if (!id) { setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setReadyStates({}); setReadyDeadline(null); setReadySeconds(60); return; }
     const [l, m] = await Promise.all([
       supabase.from("match_lobbies").select("id,status,creator_id,search_started_at,host_user_id,selected_map,ready_check_started_at").eq("id",id).maybeSingle(),
       supabase.from("match_lobby_members").select("id,user_id,member_kind,joined_at").eq("lobby_id",id).order("joined_at"),
@@ -92,7 +93,9 @@ function MatchmakingPage() {
     const mapped = (p.data ?? []) as Player[];
     setMembers(rows);
     setPlayers(mapped);
-    setReadyDeadline(l.data.ready_check_started_at ? new Date(l.data.ready_check_started_at).getTime() + 60000 : null);
+    const deadline = l.data.ready_check_started_at ? new Date(l.data.ready_check_started_at).getTime() + 60000 : null;
+    setReadyDeadline(deadline);
+    setReadySeconds(deadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : 60);
     setLobby({
       ...(l.data as Omit<Lobby,"player_count"|"spectator_count">),
       player_count: rows.filter((x) => x.member_kind === "player").length,
@@ -145,6 +148,12 @@ function MatchmakingPage() {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [lobby?.id, lobby?.status, readyDeadline]);
+
+  useEffect(() => {
+    if (!readyDeadline || lobby?.status !== "ready_check") return;
+    const timer = window.setInterval(() => setReadySeconds(Math.max(0, Math.ceil((readyDeadline - Date.now()) / 1000))), 250);
+    return () => window.clearInterval(timer);
+  }, [readyDeadline, lobby?.status]);
 
   const waitMinutes = lobby ? Math.max(0, Math.floor((Date.now() - new Date(lobby.search_started_at).getTime()) / 60000)) : 0;
   const elo = profile?.elo ?? 1000;
