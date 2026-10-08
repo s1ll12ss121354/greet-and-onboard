@@ -95,13 +95,12 @@ function MatchmakingPage() {
       return;
     }
     const rows = (m.data ?? []) as Member[];
-    const ids = rows.map((x) => x.user_id);
     const { data: voteRows } = await supabase.from("match_lobby_map_votes").select("map_name,user_id").eq("lobby_id", id);
     const counts = ["Mirage","Dust II","Nuke"].map((map_name) => ({ map_name, vote_count: (voteRows ?? []).filter((v) => v.map_name === map_name).length }));
     setMapVotes(counts);
     setMyMapVote((voteRows ?? []).find((v) => v.user_id === user?.id)?.map_name ?? null);
     setReadyStates({});
-    const p = ids.length ? await supabase.from("profiles").select("id,nickname,elo").in("id",ids) : { data: [], error: null };
+    const p = await supabase.rpc("lobby_public_profiles", { p_lobby_id: id });
     if (p.error) {
       setError(p.error.message || "Не удалось загрузить профили игроков.");
       return;
