@@ -72,7 +72,7 @@ function ProfilePage() {
   ];
   return <div className="mx-auto max-w-5xl">
     <section className="overflow-hidden border border-border bg-card">
-      <div className="relative h-48 overflow-hidden border-b border-border bg-secondary sm:h-56">
+      <div className="relative min-h-64 overflow-hidden">
         {profile.banner_url ? (
           <>
             <img
@@ -82,22 +82,59 @@ function ProfilePage() {
               loading="eager"
               className="absolute inset-0 size-full object-cover object-center"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/60" />
+            <div className="absolute inset-0 bg-black/45" />
           </>
         ) : (
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(180,255,80,.14),transparent_38%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(180,255,80,.14),transparent_38%)] bg-secondary" />
         )}
-      </div>
-      <div className="flex flex-col gap-6 px-6 pb-6 lg:flex-row lg:items-end lg:px-8">
-        <div className="-mt-12 flex items-end gap-5"><div className="size-24 shrink-0 overflow-hidden rounded-md border border-primary/50 bg-primary/10">{profile.avatar_url ? <img src={profile.avatar_url} alt={profile.nickname} className="size-full object-cover" /> : <div className="flex size-full items-center justify-center font-display text-2xl font-extrabold text-primary">{profile.nickname.slice(0,2).toUpperCase()}</div>}</div>
-          <div className="pb-1"><div className="flex items-center gap-3"><h1 className="font-display text-2xl font-bold lg:text-3xl">{profile.nickname}</h1><span className="border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-primary">LVL {level}</span></div><div className="mt-2 flex flex-wrap gap-2 text-xs">{roles.map(r=><span key={r} className="rounded-sm bg-primary/10 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-primary">{r}</span>)}<button onClick={()=>supabase.auth.signOut()} className="text-muted-foreground hover:text-destructive">Выйти</button></div></div>
+
+        <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex items-end gap-5">
+              <div className="size-24 shrink-0 overflow-hidden rounded-md border-2 border-background/80 bg-primary/10 shadow-2xl">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt={profile.nickname} className="size-full object-cover" />
+                ) : (
+                  <div className="flex size-full items-center justify-center bg-primary/10 font-display text-2xl font-extrabold text-primary">
+                    {profile.nickname.slice(0,2).toUpperCase()}
+                  </div>
+                )}
+              </div>
+
+              <div className="pb-1 text-white">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="font-display text-2xl font-bold lg:text-3xl">{profile.nickname}</h1>
+                  <span className="border border-white/30 bg-black/30 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white">
+                    LVL {level}
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  {roles.map(r => (
+                    <span key={r} className="rounded-sm bg-white/15 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-white">{r}</span>
+                  ))}
+                  <button onClick={()=>supabase.auth.signOut()} className="text-white/75 hover:text-white">Выйти</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex gap-2">
+                <input ref={bannerRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>e.target.files?.[0]&&uploadMedia("banner",e.target.files[0])}/>
+                <input ref={avatarRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>e.target.files?.[0]&&uploadMedia("avatar",e.target.files[0])}/>
+                <button disabled={!!uploading} onClick={()=>bannerRef.current?.click()} className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 disabled:opacity-50">
+                  {uploading==="banner"?<Loader2 className="size-4 animate-spin"/>:<ImageIcon className="size-4"/>} Изменить баннер
+                </button>
+                <button disabled={!!uploading} onClick={()=>avatarRef.current?.click()} className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 disabled:opacity-50">
+                  {uploading==="avatar"?<Loader2 className="size-4 animate-spin"/>:<Upload className="size-4"/>} Загрузить аватар
+                </button>
+              </div>
+              <div className="text-right text-white">
+                <div className="text-xs font-semibold uppercase tracking-widest text-white/70">ELO</div>
+                <div className="font-display text-5xl font-extrabold tracking-tight text-white">{profile.elo}</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-1 flex-wrap items-center justify-between gap-4"><div className="flex gap-2">
-          <input ref={bannerRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>e.target.files?.[0]&&uploadMedia("banner",e.target.files[0])}/>
-          <input ref={avatarRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>e.target.files?.[0]&&uploadMedia("avatar",e.target.files[0])}/>
-          <button disabled={!!uploading} onClick={()=>bannerRef.current?.click()} className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold disabled:opacity-50">{uploading==="banner"?<Loader2 className="size-4 animate-spin"/>:<ImageIcon className="size-4"/>} Изменить баннер</button>
-          <button disabled={!!uploading} onClick={()=>avatarRef.current?.click()} className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold disabled:opacity-50">{uploading==="avatar"?<Loader2 className="size-4 animate-spin"/>:<Upload className="size-4"/>} Загрузить аватар</button>
-        </div><div className="text-right"><div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">ELO</div><div className="font-display text-5xl font-extrabold tracking-tight text-primary text-glow-primary">{profile.elo}</div></div></div>
       </div>
     </section>
     <section className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">{stats.map(({label,value,icon:Icon,valueClass})=><div key={label} className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</span><Icon className="size-4 text-muted-foreground"/></div><div className={`font-display mt-3 text-3xl font-bold ${valueClass}`}>{value}</div></div>)}</section>
