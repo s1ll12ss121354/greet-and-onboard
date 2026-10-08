@@ -252,6 +252,33 @@ function AdminPage() {
     await refresh(error ? "Не удалось обработать запрос" : approve ? "Бан подтверждён" : "Запрос отклонён");
   }
 
+  async function setPlayerPassword(userId: string, password: string) {
+    if (!isOwner) {
+      setMsg("Менять пароли может только создатель Recorn.");
+      return;
+    }
+    if (password.length < 10) {
+      setMsg("Пароль должен содержать минимум 10 символов.");
+      return;
+    }
+    setBusy(true);
+    setMsg("");
+    const { error } = await supabase.functions.invoke("owner-set-password", {
+      body: { target_user_id: userId, password },
+    });
+    setBusy(false);
+    if (error) {
+      setMsg("Не удалось изменить пароль. Проверь, что серверная функция owner-set-password опубликована и настроена.");
+      return;
+    }
+    await supabase.rpc("log_activity", {
+      p_event_type: "owner_password_changed",
+      p_path: "/admin",
+      p_details: { target_user_id: userId },
+    });
+    setMsg("Пароль игрока изменён.");
+  }
+
   const title = effectiveAdmin ? "Админ-панель" : "Модерация";
   const tabs = effectiveAdmin
     ? [
@@ -338,6 +365,7 @@ function AdminPage() {
             setBusy(false);
             await refresh(error ? "Не удалось снять кастомную роль" : "Кастомная роль снята");
           }}
+          onSetPassword={setPlayerPassword}
         />
       )}
 
@@ -528,6 +556,7 @@ function PlayersSection({
   onSupportPriority: (p: Profile, enabled: boolean) => void;
   onAssignCustom: (userId: string, roleId: string) => void;
   onRemoveCustom: (userId: string, roleId: string) => void;
+  onSetPassword: (userId: string, password: string) => void;
 }) {
   return (
     <section>
@@ -549,6 +578,7 @@ function PlayersSection({
             onSupportPriority={(enabled) => onSupportPriority(p, enabled)}
             onAssign={(roleId) => onAssignCustom(p.id, roleId)}
             onRemove={(roleId) => onRemoveCustom(p.id, roleId)}
+            onSetPassword={(password) => onSetPassword(p.id, password)}
           />
         ))}
       </div>
@@ -570,6 +600,7 @@ function PlayerCard({
   onSupportPriority,
   onAssign,
   onRemove,
+  onSetPassword,
 }: {
   p: Profile;
   roles: string[];
@@ -584,9 +615,11 @@ function PlayerCard({
   onSupportPriority: (enabled: boolean) => void;
   onAssign: (roleId: string) => void;
   onRemove: (roleId: string) => void;
+  onSetPassword: (password: string) => void;
 }) {
   const [elo, setElo] = useState(String(p.elo));
   const [roleId, setRoleId] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const assignedRoles = customRoles.filter((r) => assigned.includes(r.id));
 
   return (
@@ -623,6 +656,34 @@ function PlayerCard({
         )}
         <button disabled={busy} onClick={onBan} className={`${btn} bg-destructive text-destructive-foreground`}>{p.banned ? "Разбанить" : "Забанить"}</button>
       </div>
+
+      {ownerCanAdmin && (
+        <form
+          className="mt-3 flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (newPassword.length < 10) return;
+            if (!window.confirm(`Изменить пароль игрока ${p.nickname}?`)) return;
+            onSetPassword(newPassword);
+            setNewPassword("");
+          }}
+        >
+          <input
+            type="password"
+            autoComplete="new-password"
+            minLength={10}
+            maxLength={128}
+            required
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Новый пароль (минимум 10 символов)"
+            className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+          <button disabled={busy || newPassword.length < 10} className={`${btn} bg-primary text-primary-foreground`}>
+            Установить пароль
+          </button>
+        </form>
+      )}
 
       {customRoles.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
