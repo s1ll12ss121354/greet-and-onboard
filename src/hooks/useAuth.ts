@@ -24,10 +24,15 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange(async (event, s) => {
+    // Keep the auth callback synchronous. Awaiting network work inside
+    // onAuthStateChange can hold Supabase's internal auth lock and cause
+    // session-dependent calls (like email binding) to fail with missing session.
+    const { data } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       if (event === "SIGNED_IN" && s?.user) {
-        await supabase.functions.invoke("login-audit");
+        window.setTimeout(() => {
+          void supabase.functions.invoke("login-audit");
+        }, 0);
       }
     });
     supabase.auth.getSession().then(({ data }) => {
