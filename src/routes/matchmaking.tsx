@@ -8,7 +8,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 export const Route = createFileRoute("/matchmaking")({
   head: () => ({ meta: [
     { title: "Matchmaking — RECORN" },
-    { name: "description", content: "Поиск соревновательной игры Block Strike по ELO." },
+    { name: "description", content: "Поиск соревновательной игры Blox Strike по ELO." },
   ]}),
   component: MatchmakingPage,
 });
@@ -35,7 +35,7 @@ const text = {
     search:"Найти игру", create:"Создать лобби", refresh:"Обновить", leave:"Выйти из лобби",
     login:"Войти", range:"Диапазон поиска", waiting:"Ожидание", players:"Игроки", spectators:"Наблюдатели",
     host:"Хост", hostNeeded:"Нужен хост", ready:"Готово", searching:"Ищем игроков", waitingLobby:"Лобби ожидает игроков",
-    friend:"Когда матч найден, добавьте хоста в друзья в Block Strike:", noHost:"Привилегированного хоста пока нет. Онлайн-хосты получили уведомление.",
+    friend:"Когда матч найден, добавьте хоста в друзья в Blox Strike:", noHost:"Привилегированного хоста пока нет. Онлайн-хосты получили уведомление.",
     open:"Открытые лобби", join:"Присоединиться", full:"Заполнено", staff:"Staff", player:"Игрок",
     error:"Не удалось выполнить действие. Попробуйте ещё раз.", auth:"Для поиска игры войдите в аккаунт.",
     elo:"ELO", minute:"мин", lobby:"Лобби", copied:"Ник хоста",
@@ -46,7 +46,7 @@ const text = {
     search:"Find game", create:"Create lobby", refresh:"Refresh", leave:"Leave lobby",
     login:"Log in", range:"Search range", waiting:"Waiting", players:"Players", spectators:"Spectators",
     host:"Host", hostNeeded:"Host needed", ready:"Ready", searching:"Finding players", waitingLobby:"Lobby is waiting for players",
-    friend:"When the match is found, add the host as a friend in Block Strike:", noHost:"No privileged host is in the lobby. Online hosts have been notified.",
+    friend:"When the match is found, add the host as a friend in Blox Strike:", noHost:"No privileged host is in the lobby. Online hosts have been notified.",
     open:"Open lobbies", join:"Join", full:"Full", staff:"Staff", player:"Player",
     error:"Action failed. Please try again.", auth:"Log in to start matchmaking.",
     elo:"ELO", minute:"min", lobby:"Lobby", copied:"Host nickname",
