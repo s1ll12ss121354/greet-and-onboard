@@ -302,6 +302,38 @@ export type Database = {
           },
         ]
       }
+      match_lobby_chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          lobby_id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lobby_id: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lobby_id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_lobby_chat_messages_lobby_id_fkey"
+            columns: ["lobby_id"]
+            isOneToOne: false
+            referencedRelation: "match_lobbies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_lobby_members: {
         Row: {
           id: string
@@ -655,6 +687,20 @@ export type Database = {
         Returns: boolean
       }
       is_recorn_owner: { Args: { p_user_id: string }; Returns: boolean }
+      lobby_chat_history: {
+        Args: { p_lobby_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          message: string
+          nickname: string
+          user_id: string
+        }[]
+      }
+      send_lobby_chat_message: {
+        Args: { p_lobby_id: string; p_message: string }
+        Returns: string
+      }
       lobby_public_profiles: {
         Args: { p_lobby_id: string }
         Returns: {
