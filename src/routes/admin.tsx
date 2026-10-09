@@ -102,7 +102,8 @@ function AdminPage() {
   const [logins, setLogins] = useState<LoginEvent[]>([]);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
-  const [banDialogReport, setBanDialogReport] = useState<Report | null>(null);\n  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);\n  const [maintenanceBusy, setMaintenanceBusy] = useState(false);
+  const [banDialogReport, setBanDialogReport] = useState<Report | null>(null);
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);\n  const [maintenanceBusy, setMaintenanceBusy] = useState(false);
 
   async function load() {
     if (!allowed) return;
