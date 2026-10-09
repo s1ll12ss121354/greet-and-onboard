@@ -53,38 +53,79 @@ function ProfilePage() {
     }
     setSecurityBusy(true);
     try {
-      // Re-hydrate Supabase Auth from the live hook session before changing
-      // the email. The UI can still have a user/profile rendered for a moment
-      // while the auth client's internal storage has lost its session.
+      // Use the signed-in user's access token explicitly for Supabase Auth.
+      // This avoids AuthSessionMissingError from the SDK's internal session
+      // cache while the profile is still rendered from the valid hook session.
       if (!session || session.user.id !== user.id) {
         throw new Error("Сессия входа не найдена. Выйди из аккаунта, войди заново и повтори привязку почты.");
       }
 
-      const { data: restoredAuth, error: restoreError } = await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      });
-      if (restoreError) throw restoreError;
+      const supabaseUrl = supabase.supabaseUrl.replace(/\\/+$/, "");
+      const apiKey = supabase.supabaseKey;
+      let accessToken = session.access_token;
 
-      const { data: currentAuth, error: currentAuthError } = await supabase.auth.getSession();
-      if (currentAuthError) throw currentAuthError;
-      const activeSession = currentAuth.session ?? restoredAuth.session;
+      const requestEmailChange = async (token: string) => {
+        const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+          method: "PUT",
+          headers: {
+            apikey: apiKey,
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: cleanEmail }),
+        });
+        const payload = await response.json().catch(() => ({} as Record<string, unknown>));
+        return { response, payload: payload as Record<string, unknown> };
+      };
 
-      if (!activeSession || activeSession.user.id !== user.id) {
-        throw new Error("Не удалось восстановить сессию Supabase. Выйди из аккаунта и войди заново.");
+      let emailChange = await requestEmailChange(accessToken);
+
+      // Access tokens expire quickly. If the API says this token is expired,
+      // refresh using the user's refresh token and retry once.
+      if (emailChange.response.status === 401) {
+        const refreshResponse = await fetch(
+          `${supabaseUrl}/auth/v1/token?grant_type=refresh_token`,
+          {
+            method: "POST",
+            headers: {
+              apikey: apiKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refresh_token: session.refresh_token }),
+          },
+        );
+        const refreshPayload = await refreshResponse.json().catch(() => ({} as Record<string, unknown>)) as Record<string, unknown>;
+        if (
+          !refreshResponse.ok ||
+          typeof refreshPayload.access_token !== "string" ||
+          typeof refreshPayload.refresh_token !== "string"
+        ) {
+          throw new Error("Сессия Supabase истекла. Выйди из аккаунта и войди снова, затем повтори привязку почты.");
+        }
+
+        accessToken = refreshPayload.access_token;
+        try {
+          await supabase.auth.setSession({
+            access_token: refreshPayload.access_token,
+            refresh_token: refreshPayload.refresh_token,
+          });
+        } catch {
+          // The explicit access token below still allows this verified request;
+          // auth state will be re-read after email confirmation.
+        }
+
+        emailChange = await requestEmailChange(accessToken);
       }
 
-      // Refresh the session first so updateUser doesn't run with an expired or
-      // stale access token. A successful refresh also re-persists the session.
-      const { data: refreshedAuth, error: refreshError } = await supabase.auth.refreshSession({
-        refresh_token: activeSession.refresh_token,
-      });
-      if (refreshError) throw refreshError;
-      if (!refreshedAuth.session || refreshedAuth.session.user.id !== user.id) {
-        throw new Error("Сессия истекла. Войди заново, затем повтори привязку почты.");
+      if (!emailChange.response.ok) {
+        const message =
+          emailChange.payload.msg ??
+          emailChange.payload.message ??
+          emailChange.payload.error_description ??
+          emailChange.payload.error ??
+          `Supabase Auth вернул ошибку (${emailChange.response.status}).`;
+        throw new Error(String(message));
       }
-
-      const { error } = await supabase.auth.updateUser({ email: cleanEmail });
       if (error) throw error;
       setSecurityEmail(cleanEmail);
       setSecurityStep("code");
