@@ -8,7 +8,7 @@ export const Route = createFileRoute("/match-found")({
   head: () => ({
     meta: [
       { title: "Матч найден — RECORN" },
-      { name: "description", content: "Матч RECORN начался. Добавьте хоста в друзья Block Strike." },
+      { name: "description", content: "Матч RECORN начался. Добавьте хоста в друзья Blox Strike." },
     ],
   }),
   component: MatchFoundPage,
@@ -143,7 +143,7 @@ function MatchFoundPage() {
               Матч начался
             </h1>
             <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-muted-foreground">
-              Игра запущена. Добавьте хоста в друзья в Block Strike, чтобы он смог
+              Игра запущена. Добавьте хоста в друзья в Blox Strike, чтобы он смог
               провести матч.
             </p>
           </div>
