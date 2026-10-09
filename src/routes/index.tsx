@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowUpRight, BarChart3, Check, ChevronRight, Crosshair, Heart, Radio, ShieldCheck, Swords, Trophy, Users, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -18,6 +20,42 @@ const FEATURES = [
 ];
 
 function HomePage() {
+  const [onlineCount, setOnlineCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Supabase Presence counts visitors currently connected to the live site.
+    const presenceKey = typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const channel = supabase.channel("recorn-site-online", {
+      config: { presence: { key: presenceKey } },
+    });
+
+    const updateCount = () => {
+      const presence = channel.presenceState();
+      const count = Object.values(presence).reduce(
+        (total, visitors) => total + visitors.length,
+        0,
+      );
+      setOnlineCount(count);
+    };
+
+    channel
+      .on("presence", { event: "sync" }, updateCount)
+      .on("presence", { event: "join" }, updateCount)
+      .on("presence", { event: "leave" }, updateCount)
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          void channel.track({ online_at: new Date().toISOString() });
+          updateCount();
+        }
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
   return (
     <div className="mx-auto max-w-[1420px] space-y-4">
       <section className="relative overflow-hidden border border-border bg-card">
@@ -28,7 +66,7 @@ function HomePage() {
           <div className="flex flex-col justify-between p-7 sm:p-10 lg:p-14">
             <div className="flex items-center justify-between">
               <div className="inline-flex items-center gap-2 border border-border bg-background px-3 py-2 text-[9px] font-extrabold uppercase tracking-[.22em]">
-                <span className="size-1.5 rounded-full bg-success" /> Online / Operational
+                <span className="size-1.5 animate-pulse rounded-full bg-success" /> САЙТ ОНЛАЙН <span className="ml-1 border-l border-border pl-2 tabular-nums">{onlineCount === null ? "…" : onlineCount}</span> <span className="text-muted-foreground">сейчас</span>
               </div>
               <span className="hidden text-[9px] font-extrabold uppercase tracking-[.25em] text-muted-foreground sm:block">RC-01 / 2026</span>
             </div>
