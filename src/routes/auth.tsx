@@ -9,7 +9,7 @@ export const Route = createFileRoute("/auth")({
       { title: "Вход и регистрация — RECORN" },
       { name: "description", content: "Вход и регистрация на RECORN." },
       { property: "og:title", content: "Вход и регистрация — RECORN" },
-      { property: "og:description", content: "Создайте аккаунт RECORN и играйте в Block Strike." },
+      { property: "og:description", content: "Создайте аккаунт RECORN и играйте в Blox Strike." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
