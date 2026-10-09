@@ -22,6 +22,7 @@ export type Database = {
           event_type: string | null
           id: string
           page: string | null
+          path: string | null
           user_id: string | null
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           event_type?: string | null
           id?: string
           page?: string | null
+          path?: string | null
           user_id?: string | null
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           event_type?: string | null
           id?: string
           page?: string | null
+          path?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -50,7 +53,10 @@ export type Database = {
           created_at: string
           id: string
           reason: string
+          report_id: string | null
           requested_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           target_nick: string | null
           target_user_id: string | null
@@ -61,7 +67,10 @@ export type Database = {
           created_at?: string
           id?: string
           reason: string
+          report_id?: string | null
           requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           target_nick?: string | null
           target_user_id?: string | null
@@ -72,13 +81,24 @@ export type Database = {
           created_at?: string
           id?: string
           reason?: string
+          report_id?: string | null
           requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           target_nick?: string | null
           target_user_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ban_requests_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coach_sessions: {
         Row: {
@@ -111,18 +131,21 @@ export type Database = {
         Row: {
           color: string | null
           created_at: string
+          description: string
           id: string
           name: string
         }
         Insert: {
           color?: string | null
           created_at?: string
+          description?: string
           id?: string
           name: string
         }
         Update: {
           color?: string | null
           created_at?: string
+          description?: string
           id?: string
           name?: string
         }
@@ -132,31 +155,40 @@ export type Database = {
         Row: {
           accepted_rules: boolean
           created_at: string
+          discord_contact: string | null
           has_vip: boolean
           id: string
+          priority: boolean
           reason: string
           roblox_nick: string
           status: string
+          telegram_contact: string | null
           user_id: string
         }
         Insert: {
           accepted_rules?: boolean
           created_at?: string
+          discord_contact?: string | null
           has_vip: boolean
           id?: string
+          priority?: boolean
           reason: string
           roblox_nick: string
           status?: string
+          telegram_contact?: string | null
           user_id: string
         }
         Update: {
           accepted_rules?: boolean
           created_at?: string
+          discord_contact?: string | null
           has_vip?: boolean
           id?: string
+          priority?: boolean
           reason?: string
           roblox_nick?: string
           status?: string
+          telegram_contact?: string | null
           user_id?: string
         }
         Relationships: []
@@ -276,6 +308,7 @@ export type Database = {
           joined_at: string
           lobby_id: string
           member_kind: string
+          ready: boolean
           team: string | null
           user_id: string
         }
@@ -284,6 +317,7 @@ export type Database = {
           joined_at?: string
           lobby_id: string
           member_kind?: string
+          ready?: boolean
           team?: string | null
           user_id: string
         }
@@ -292,6 +326,7 @@ export type Database = {
           joined_at?: string
           lobby_id?: string
           member_kind?: string
+          ready?: boolean
           team?: string | null
           user_id?: string
         }
@@ -464,26 +499,38 @@ export type Database = {
       }
       security_login_events: {
         Row: {
+          browser: string | null
           created_at: string
+          device_category: string | null
           event_type: string
           id: string
           ip_address: string | null
+          ip_hash: string | null
+          os: string | null
           user_agent: string | null
           user_id: string | null
         }
         Insert: {
+          browser?: string | null
           created_at?: string
+          device_category?: string | null
           event_type: string
           id?: string
           ip_address?: string | null
+          ip_hash?: string | null
+          os?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
         Update: {
+          browser?: string | null
           created_at?: string
+          device_category?: string | null
           event_type?: string
           id?: string
           ip_address?: string | null
+          ip_hash?: string | null
+          os?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
@@ -578,6 +625,23 @@ export type Database = {
         Args: { p_role_id: string; p_user_id: string }
         Returns: boolean
       }
+      admin_review_host_application: {
+        Args: { p_application_id: string; p_approve: boolean }
+        Returns: boolean
+      }
+      admin_set_report_status: {
+        Args: {
+          p_ban_minutes?: number
+          p_ban_reason?: string
+          p_report_id: string
+          p_status: string
+        }
+        Returns: boolean
+      }
+      admin_set_support_priority: {
+        Args: { p_enabled: boolean; p_user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -603,8 +667,13 @@ export type Database = {
           wins: number
         }[]
       }
+      log_activity: {
+        Args: { p_details?: Json; p_event_type: string; p_path?: string }
+        Returns: boolean
+      }
       mm_assign_teams: { Args: { p_lobby_id: string }; Returns: boolean }
       mm_create_lobby: { Args: never; Returns: string }
+      mm_expire_unready: { Args: { p_lobby_id: string }; Returns: boolean }
       mm_join_lobby: {
         Args: { p_lobby_id: string; p_spectator?: boolean }
         Returns: Json
@@ -625,6 +694,10 @@ export type Database = {
       }
       mm_owner_start_lobby: { Args: { p_lobby_id: string }; Returns: boolean }
       mm_search_lobby: { Args: never; Returns: string }
+      mm_set_ready: {
+        Args: { p_lobby_id: string; p_ready: boolean }
+        Returns: boolean
+      }
       mm_start_ready_check: { Args: { p_lobby_id: string }; Returns: boolean }
       mm_vote_map: {
         Args: { p_lobby_id: string; p_map_name: string }
@@ -640,6 +713,11 @@ export type Database = {
           nickname: string
           wins: number
         }[]
+      }
+      request_report_ban: { Args: { p_report_id: string }; Returns: string }
+      review_ban_request: {
+        Args: { p_approve: boolean; p_request_id: string }
+        Returns: boolean
       }
       submit_match_result: {
         Args: { p_lobby_id: string; p_players: Json; p_screenshot_path: string }
