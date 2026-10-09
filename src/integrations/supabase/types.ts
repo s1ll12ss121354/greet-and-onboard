@@ -333,7 +333,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
+      },
       match_lobby_members: {
         Row: {
           id: string
@@ -696,11 +696,11 @@ export type Database = {
           nickname: string
           user_id: string
         }[]
-      }
+      },
       send_lobby_chat_message: {
         Args: { p_lobby_id: string; p_message: string }
         Returns: string
-      }
+      },
       lobby_public_profiles: {
         Args: { p_lobby_id: string }
         Returns: {
