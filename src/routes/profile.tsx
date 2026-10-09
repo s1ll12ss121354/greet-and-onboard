@@ -18,9 +18,9 @@ export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
       { title: "Профиль — RECORN" },
-      { name: "description", content: "Профиль игрока RECORN: статистика, ELO и история матчей Blox Strike." },
+      { name: "description", content: "Профиль игрока RECORN: статистика, ELO и история матчей Block Strike." },
       { property: "og:title", content: "Профиль — RECORN" },
-      { property: "og:description", content: "Статистика, ELO и история матчей игрока Blox Strike." },
+      { property: "og:description", content: "Статистика, ELO и история матчей игрока Block Strike." },
     ],
   }),
   component: ProfilePage,
