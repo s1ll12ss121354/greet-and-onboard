@@ -53,23 +53,35 @@ function ProfilePage() {
     }
     setSecurityBusy(true);
     try {
-      // Ensure the Auth client still has a persisted session. The hook's
-      // session is a safe recovery source if browser storage was briefly out
-      // of sync after navigation or a login event.
-      const { data: currentAuth } = await supabase.auth.getSession();
-      let activeSession = currentAuth.session;
-
-      if (!activeSession && session && session.user.id === user.id) {
-        const { data: restoredAuth, error: restoreError } = await supabase.auth.setSession({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-        });
-        if (restoreError) throw restoreError;
-        activeSession = restoredAuth.session;
+      // Re-hydrate Supabase Auth from the live hook session before changing
+      // the email. The UI can still have a user/profile rendered for a moment
+      // while the auth client's internal storage has lost its session.
+      if (!session || session.user.id !== user.id) {
+        throw new Error("Сессия входа не найдена. Выйди из аккаунта, войди заново и повтори привязку почты.");
       }
 
+      const { data: restoredAuth, error: restoreError } = await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
+      if (restoreError) throw restoreError;
+
+      const { data: currentAuth, error: currentAuthError } = await supabase.auth.getSession();
+      if (currentAuthError) throw currentAuthError;
+      const activeSession = currentAuth.session ?? restoredAuth.session;
+
       if (!activeSession || activeSession.user.id !== user.id) {
-        throw new Error("Сессия входа потеряна. Выйди из аккаунта и войди снова, затем повтори привязку почты.");
+        throw new Error("Не удалось восстановить сессию Supabase. Выйди из аккаунта и войди заново.");
+      }
+
+      // Refresh the session first so updateUser doesn't run with an expired or
+      // stale access token. A successful refresh also re-persists the session.
+      const { data: refreshedAuth, error: refreshError } = await supabase.auth.refreshSession({
+        refresh_token: activeSession.refresh_token,
+      });
+      if (refreshError) throw refreshError;
+      if (!refreshedAuth.session || refreshedAuth.session.user.id !== user.id) {
+        throw new Error("Сессия истекла. Войди заново, затем повтори привязку почты.");
       }
 
       const { error } = await supabase.auth.updateUser({ email: cleanEmail });
