@@ -27,7 +27,7 @@ export const Route = createFileRoute("/profile")({
 });
 
 function ProfilePage() {
-  const { profile, roles, loading, user } = useAuth();
+  const { profile, roles, loading, user, session } = useAuth();
   const [uploading, setUploading] = useState<"avatar" | "banner" | null>(null);
   const [securityEmail, setSecurityEmail] = useState("");
   const [securityCode, setSecurityCode] = useState("");
@@ -53,6 +53,25 @@ function ProfilePage() {
     }
     setSecurityBusy(true);
     try {
+      // Ensure the Auth client still has a persisted session. The hook's
+      // session is a safe recovery source if browser storage was briefly out
+      // of sync after navigation or a login event.
+      const { data: currentAuth } = await supabase.auth.getSession();
+      let activeSession = currentAuth.session;
+
+      if (!activeSession && session && session.user.id === user.id) {
+        const { data: restoredAuth, error: restoreError } = await supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        });
+        if (restoreError) throw restoreError;
+        activeSession = restoredAuth.session;
+      }
+
+      if (!activeSession || activeSession.user.id !== user.id) {
+        throw new Error("Сессия входа потеряна. Выйди из аккаунта и войди снова, затем повтори привязку почты.");
+      }
+
       const { error } = await supabase.auth.updateUser({ email: cleanEmail });
       if (error) throw error;
       setSecurityEmail(cleanEmail);
