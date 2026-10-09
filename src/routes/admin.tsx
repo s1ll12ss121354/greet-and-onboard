@@ -177,12 +177,15 @@ function AdminPage() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.rpc("admin_set_report_status", {
+    const args: { p_report_id: string; p_status: string; p_ban_minutes?: number; p_ban_reason?: string } = {
       p_report_id: report.id,
       p_status: status,
-      p_ban_minutes: status === "resolved" ? banMinutes : null,
-      p_ban_reason: status === "resolved" ? banReason : null,
-    });
+    };
+    if (status === "resolved") {
+      if (banMinutes !== null) args.p_ban_minutes = banMinutes;
+      if (banReason) args.p_ban_reason = banReason;
+    }
+    const { error } = await supabase.rpc("admin_set_report_status", args);
     setBusy(false);
     if (!error) setBanDialogReport(null);
     await refresh(error ? "Ошибка: не удалось обработать жалобу" : status === "resolved" ? "Жалоба одобрена и бан применён" : "Жалоба отклонена");
@@ -542,6 +545,7 @@ function PlayersSection({
   onSupportPriority,
   onAssignCustom,
   onRemoveCustom,
+  onSetPassword,
 }: {
   players: Profile[];
   roles: { user_id: string; role: string }[];

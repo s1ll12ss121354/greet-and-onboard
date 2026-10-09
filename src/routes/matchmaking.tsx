@@ -282,7 +282,7 @@ function MatchmakingPage() {
   }
 
   async function submitResult() {
-    if (!lobby || lobby.host_user_id !== user.id || resultBusy) return;
+    if (!lobby || !user || lobby.host_user_id !== user.id || resultBusy) return;
     if (!resultScreenshot) { setError("Загрузите скриншот результата хоста."); return; }
     const playerRows = members.filter((m) => m.member_kind === "player");
     const participants = playerRows.filter((m) => resultStats[m.user_id]?.participated !== false);
@@ -306,7 +306,7 @@ function MatchmakingPage() {
         participated: resultStats[m.user_id]?.participated !== false,
       }));
       const { error: e } = await supabase.rpc("submit_match_result", {
-        p_lobby_id: lobby.id, p_screenshot_path: screenshotPath || null, p_players: payload,
+        p_lobby_id: lobby.id, p_screenshot_path: screenshotPath, p_players: payload,
       });
       if (e) throw e;
       window.sessionStorage.removeItem("recorn-lobby");

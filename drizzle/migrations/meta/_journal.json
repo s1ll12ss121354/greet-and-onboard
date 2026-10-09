@@ -22,6 +22,13 @@
       "when": 1791440931698,
       "tag": "0002_no_auto_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791532431074,
+      "tag": "0003_add_missing_columns_and_admin_functions",
+      "breakpoints": true
     }
   ]
 }
