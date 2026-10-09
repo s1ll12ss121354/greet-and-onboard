@@ -78,6 +78,16 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // The runtime config is public (URL + publishable key only). Serialize it
+  // through the root loader so the browser can use the backend's server env
+  // when the platform failed to inject VITE_* values into the JS bundle.
+  loader: () => {
+    const env = typeof process !== "undefined" ? process.env : undefined;
+    return {
+      supabaseUrl: env?.SUPABASE_URL ?? env?.VITE_SUPABASE_URL ?? null,
+      supabasePublishableKey: env?.SUPABASE_PUBLISHABLE_KEY ?? env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? null,
+    };
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -122,6 +132,16 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const backendConfig = Route.useLoaderData();
+
+  // Set this synchronously during the root render, before child effects try
+  // to initialize Supabase. Only publishable client configuration is exposed.
+  if (typeof window !== "undefined" && backendConfig.supabaseUrl && backendConfig.supabasePublishableKey) {
+    window.__RECORN_SUPABASE_CONFIG__ = {
+      url: backendConfig.supabaseUrl,
+      publishableKey: backendConfig.supabasePublishableKey,
+    };
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
