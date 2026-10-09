@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, FileWarning, History, Palette, Shield, Users, Wrench } from "lucide-react";
+import { ClipboardList, FileWarning, History, Palette, Power, Shield, Users, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type Profile } from "@/hooks/useAuth";
 
@@ -102,7 +102,7 @@ function AdminPage() {
   const [logins, setLogins] = useState<LoginEvent[]>([]);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
-  const [banDialogReport, setBanDialogReport] = useState<Report | null>(null);
+  const [banDialogReport, setBanDialogReport] = useState<Report | null>(null);\n  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);\n  const [maintenanceBusy, setMaintenanceBusy] = useState(false);
 
   async function load() {
     if (!allowed) return;
@@ -138,6 +138,47 @@ function AdminPage() {
   useEffect(() => {
     if (allowed) load();
   }, [allowed, effectiveAdmin]);
+
+  useEffect(() => {
+    if (!isOwner) return;
+    let active = true;
+    const readMaintenance = async () => {
+      try {
+        const { data, error } = await supabase.rpc("get_site_maintenance");
+        if (active && !error) setMaintenanceEnabled(Boolean(data));
+      } catch {
+        if (active) setMsg("Не удалось прочитать статус техработ.");
+      }
+    };
+    void readMaintenance();
+    return () => { active = false; };
+  }, [isOwner]);
+
+  async function toggleMaintenance() {
+    if (!isOwner || maintenanceBusy) return;
+    const next = !maintenanceEnabled;
+    const confirmed = window.confirm(
+      next
+        ? "Включить техработы? Все посетители, кроме овнера, увидят экран обслуживания."
+        : "Выключить техработы и вернуть обычный сайт всем посетителям?"
+    );
+    if (!confirmed) return;
+
+    setMaintenanceBusy(true);
+    setMsg("");
+    try {
+      const { data, error } = await supabase.rpc("owner_set_site_maintenance", { p_enabled: next });
+      if (error) throw error;
+      setMaintenanceEnabled(Boolean(data));
+      setMsg(next
+        ? "Техработы включены. Обычный сайт скрывается у всех, кроме овнера."
+        : "Техработы выключены. Обычный сайт снова доступен.");
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "Не удалось изменить режим техработ.");
+    } finally {
+      setMaintenanceBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (isModerator && !isAdmin) setTab("reports");
@@ -306,6 +347,39 @@ function AdminPage() {
         </div>
         <Link to="/" className={`${btn} bg-secondary`}>На главную</Link>
       </header>
+
+      {isOwner && (
+        <section className={`relative overflow-hidden rounded-2xl border p-5 ${maintenanceEnabled ? "border-amber-400/40 bg-amber-400/5" : "border-border bg-card"}`}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className={`rounded-xl p-3 ${maintenanceEnabled ? "bg-amber-400/10 text-amber-300" : "bg-secondary text-foreground"}`}>
+                <Wrench className="size-5" />
+              </div>
+              <div>
+                <h2 className="font-display text-lg font-bold">Режим технических работ</h2>
+                <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                  {maintenanceEnabled
+                    ? "Сайт закрыт для всех посетителей, кроме овнера. На экране показан анимированный код и контакт поддержки."
+                    : "Одна кнопка переключает сайт на экран техработ. Твой аккаунт овнера останется с доступом к сайту."}
+                </p>
+                <div className="mt-2 inline-flex items-center gap-2 text-xs font-bold">
+                  <span className={`size-2 rounded-full ${maintenanceEnabled ? "bg-amber-300" : "bg-emerald-400"}`} />
+                  {maintenanceEnabled ? "Техработы включены" : "Сайт работает обычно"}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={maintenanceBusy}
+              onClick={toggleMaintenance}
+              className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition disabled:opacity-50 ${maintenanceEnabled ? "bg-emerald-400 text-black hover:bg-emerald-300" : "bg-amber-300 text-black hover:bg-amber-200"}`}
+            >
+              <Power className="size-4" />
+              {maintenanceBusy ? "Сохраняем…" : maintenanceEnabled ? "Снять техработы" : "Закрыть на техработы"}
+            </button>
+          </div>
+        </section>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {tabs.map(([key, label, Icon]) => (
