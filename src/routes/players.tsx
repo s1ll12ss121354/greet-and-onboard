@@ -7,9 +7,9 @@ export const Route = createFileRoute("/players")({
   head: () => ({
     meta: [
       { title: "Лидерборд ELO — RECORN" },
-      { name: "description", content: "Глобальный лидерборд игроков Block Strike по ELO на RECORN." },
+      { name: "description", content: "Глобальный лидерборд игроков Blox Strike по ELO на RECORN." },
       { property: "og:title", content: "Лидерборд ELO — RECORN" },
-      { property: "og:description", content: "Сравнивай игроков Block Strike по ELO." },
+      { property: "og:description", content: "Сравнивай игроков Blox Strike по ELO." },
     ],
   }),
   component: PlayersPage,
