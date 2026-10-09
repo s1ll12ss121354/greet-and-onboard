@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Crown, LogIn, MessageCircle, Plus, RefreshCw, Search, Send, Shield, Users, X } from "lucide-react";
+import { Bot, Crown, LogIn, MessageCircle, Plus, RefreshCw, Search, Send, Shield, Trash2, Users, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -82,6 +82,7 @@ function MatchmakingPage() {
 
   const staff = roles.some((r) => ["host","moderator","admin"].includes(r));
   const isOwner = profile?.nickname.trim().toLowerCase() === "isy_hesy09";
+  const canManageLobbies = isOwner || roles.includes("admin");
 
   async function loadLobby(id: string | null) {
     if (!id) { setLobby(null); setMembers([]); setPlayers([]); setMapVotes([]); setMyMapVote(null); setReadyStates({}); setReadyDeadline(null); setReadySeconds(60); return; }
@@ -341,6 +342,29 @@ function MatchmakingPage() {
     loadOpen();
   }
 
+  async function closeLobby(lobbyId: string) {
+    if (!canManageLobbies || busy) return;
+    if (!window.confirm("Закрыть это лобби? Оно исчезнет из активного списка.")) return;
+    setBusy(true);
+    setError("");
+    const { error: closeError } = await supabase.rpc("admin_close_lobby", { p_lobby_id: lobbyId });
+    if (closeError) {
+      setError(closeError.message || "Не удалось закрыть лобби.");
+    } else if (lobby?.id === lobbyId) {
+      window.sessionStorage.removeItem("recorn-lobby");
+      setLobby(null);
+      setMembers([]);
+      setPlayers([]);
+      setMapVotes([]);
+      setMyMapVote(null);
+      setReadyStates({});
+      setReadyDeadline(null);
+      setError("");
+    }
+    setBusy(false);
+    await loadOpen();
+  }
+
   async function sendChatMessage() {
     if (!lobby || !chatDraft.trim() || chatSending) return;
     const message = chatDraft.trim();
@@ -555,6 +579,11 @@ function MatchmakingPage() {
               </button>
             )}
             <button disabled={busy} onClick={leaveLobby} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-destructive/30 px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><X className="size-4"/>{t.leave}</button>
+            {canManageLobbies && lobby.status !== "cancelled" && (
+              <button disabled={busy} onClick={() => closeLobby(lobby.id)} className="mt-5 ml-2 inline-flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/20 disabled:opacity-50">
+                <Trash2 className="size-4"/> Закрыть лобби
+              </button>
+            )}
           </div>
 
           <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
@@ -618,7 +647,7 @@ function MatchmakingPage() {
           <div className="rounded-3xl border border-border bg-card p-5 sm:p-6">
             <div className="flex items-center gap-2 font-display font-bold"><Users className="size-4 text-primary"/>{t.open}</div>
             <div className="mt-4 space-y-2">
-              {openLobbies.filter((x) => x.id !== lobby.id).map((x) => <div key={x.id} className="rounded-2xl border border-border p-3"><div className="flex items-center justify-between gap-2"><span className="font-bold">{x.player_count}/10</span><span className="text-xs text-muted-foreground">{x.status}</span></div><div className="mt-2 flex gap-2"><button disabled={busy || x.player_count>=10} onClick={() => joinLobby(x.id)} className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-40">{t.join}</button>{staff && <button disabled={busy} onClick={() => joinAsSpectator(x.id)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold"><Shield className="inline size-3"/> {t.spectators}</button>}</div></div>)}
+              {openLobbies.filter((x) => x.id !== lobby.id).map((x) => <div key={x.id} className="rounded-2xl border border-border p-3"><div className="flex items-center justify-between gap-2"><span className="font-bold">{x.player_count}/10</span><span className="text-xs text-muted-foreground">{x.status}</span></div><div className="mt-2 flex flex-wrap gap-2"><button disabled={busy || x.player_count>=10} onClick={() => joinLobby(x.id)} className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-40">{t.join}</button>{staff && <button disabled={busy} onClick={() => joinAsSpectator(x.id)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold"><Shield className="inline size-3"/> {t.spectators}</button>}{canManageLobbies && <button disabled={busy} onClick={() => closeLobby(x.id)} title="Закрыть лобби" aria-label="Закрыть лобби" className="rounded-lg border border-destructive/30 px-3 py-2 text-xs font-bold text-destructive disabled:opacity-50"><Trash2 className="inline size-3"/> Закрыть</button>}</div></div>)}
               {openLobbies.filter((x) => x.id !== lobby.id).length === 0 && <p className="text-sm text-muted-foreground">—</p>}
             </div>
           </div>
@@ -629,7 +658,7 @@ function MatchmakingPage() {
         <section className="rounded-3xl border border-border bg-card p-6 sm:p-8">
           <div className="flex items-center gap-3"><Users className="size-5 text-primary"/><h2 className="font-display text-xl font-bold">{t.open}</h2></div>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {openLobbies.map((x) => <div key={x.id} className="rounded-2xl border border-border bg-background/40 p-4"><div className="flex items-center justify-between"><span className="font-bold">{x.player_count}/10</span><span className="text-xs text-muted-foreground">{x.status}</span></div><div className="mt-3 flex gap-2"><button disabled={busy || x.player_count>=10} onClick={() => joinLobby(x.id)} className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-40">{t.join}</button>{staff && <button disabled={busy} onClick={() => joinAsSpectator(x.id)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold"><Shield className="inline size-3"/> {t.spectators}</button>}</div></div>)}
+            {openLobbies.map((x) => <div key={x.id} className="rounded-2xl border border-border bg-background/40 p-4"><div className="flex items-center justify-between"><span className="font-bold">{x.player_count}/10</span><span className="text-xs text-muted-foreground">{x.status}</span></div><div className="mt-3 flex flex-wrap gap-2"><button disabled={busy || x.player_count>=10} onClick={() => joinLobby(x.id)} className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-40">{t.join}</button>{staff && <button disabled={busy} onClick={() => joinAsSpectator(x.id)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold"><Shield className="inline size-3"/> {t.spectators}</button>}{canManageLobbies && <button disabled={busy} onClick={() => closeLobby(x.id)} className="rounded-lg border border-destructive/30 px-3 py-2 text-xs font-bold text-destructive disabled:opacity-50"><Trash2 className="inline size-3"/> Закрыть</button>}</div></div>)}
             {openLobbies.length === 0 && <p className="text-sm text-muted-foreground">{t.waitingLobby}</p>}
           </div>
         </section>
