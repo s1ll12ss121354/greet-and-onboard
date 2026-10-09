@@ -60,15 +60,11 @@ function AuthPage() {
       }
 
       const loginInput = clean.trim();
-      if (loginInput.includes("@")) {
-        authEmail = loginInput.toLowerCase();
-      } else {
-        if (!/^[A-Za-z0-9_]{3,20}$/.test(loginInput)) {
-          setErr("Введи ник (3–20 символов) или привязанную почту.");
-          return;
-        }
-        authEmail = nickToEmail(loginInput);
+      if (!/^[A-Za-z0-9_]{3,20}$/.test(loginInput)) {
+        setErr("Введи ник: 3–20 символов, латиница, цифры и _.");
+        return;
       }
+      authEmail = nickToEmail(loginInput);
       const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: pass });
       if (error) throw new Error("Неверный ник или пароль.");
       nav({ to: "/profile" });
