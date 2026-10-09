@@ -657,6 +657,10 @@ export type Database = {
         Args: { p_role_id: string; p_user_id: string }
         Returns: boolean
       }
+      admin_close_lobby: {
+        Args: { p_lobby_id: string }
+        Returns: boolean
+      }
       admin_review_host_application: {
         Args: { p_application_id: string; p_approve: boolean }
         Returns: boolean
@@ -749,7 +753,15 @@ export type Database = {
         Args: { p_lobby_id: string; p_map_name: string }
         Returns: Json
       }
+      owner_set_site_maintenance: {
+        Args: { p_enabled: boolean }
+        Returns: boolean
+      }
       owner_grant_admin: { Args: { p_user_id: string }; Returns: boolean }
+      get_site_maintenance: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       public_leaderboard: {
         Args: { p_limit?: number }
         Returns: {
