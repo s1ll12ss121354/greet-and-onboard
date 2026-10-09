@@ -4,8 +4,8 @@ import { ArrowUpRight, BarChart3, Check, ChevronRight, Crosshair, Heart, Radio, 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "RECORN — Block Strike Competitive" },
-      { name: "description", content: "RECORN — соревновательная платформа Block Strike с ELO, матчами и честной игрой." },
+      { title: "RECORN — Blox Strike Competitive" },
+      { name: "description", content: "RECORN — соревновательная платформа Blox Strike с ELO, матчами и честной игрой." },
     ],
   }),
   component: HomePage,
@@ -35,7 +35,7 @@ function HomePage() {
 
             <div className="py-14">
               <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.3em] text-muted-foreground">
-                <Crosshair className="size-3.5 text-foreground" /> Block Strike competitive
+                <Crosshair className="size-3.5 text-foreground" /> Blox Strike competitive
               </div>
               <h1 className="mt-6 max-w-4xl font-display text-[54px] font-extrabold leading-[.91] tracking-[-.065em] sm:text-[76px] lg:text-[96px]">
                 ИГРАЙ.<br />
@@ -43,7 +43,7 @@ function HomePage() {
                 РАСТИ.
               </h1>
               <p className="mt-7 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
-                RECORN — отдельная соревновательная среда для Block Strike. Здесь матч начинается с рейтинга, а заканчивается результатом.
+                RECORN — отдельная соревновательная среда для Blox Strike. Здесь матч начинается с рейтинга, а заканчивается результатом.
               </p>
               <div className="mt-8 flex flex-wrap gap-2">
                 <Link to="/matchmaking" className="group inline-flex items-center gap-3 bg-foreground px-5 py-3.5 text-xs font-extrabold uppercase tracking-[.08em] text-background">
@@ -153,7 +153,7 @@ function HomePage() {
       </section>
 
       <footer className="flex flex-col justify-between gap-2 border-t border-border pt-5 text-[9px] font-extrabold uppercase tracking-[.18em] text-muted-foreground sm:flex-row">
-        <span>RECORN / Block Strike competitive network</span><span>Fair play · ELO · Matchmaking</span>
+        <span>RECORN / Blox Strike competitive network</span><span>Fair play · ELO · Matchmaking</span>
       </footer>
     </div>
   );
