@@ -542,6 +542,7 @@ function PlayersSection({
   onSupportPriority,
   onAssignCustom,
   onRemoveCustom,
+  onSetPassword,
 }: {
   players: Profile[];
   roles: { user_id: string; role: string }[];

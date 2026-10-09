@@ -94,7 +94,7 @@ function ProfilePage() {
   }
   const level = faceitLevel(profile.elo);
   async function uploadMedia(kind: "avatar" | "banner", file: File) {
-    if (!user) return;
+    if (!user || !profile) return;
     if (!["image/png","image/jpeg","image/webp"].includes(file.type)) return alert("Разрешены PNG, JPG и WEBP.");
     const max = kind === "avatar" ? 3 : 8;
     if (file.size > max * 1024 * 1024) return alert(`Файл должен быть не больше ${max} МБ.`);
@@ -106,8 +106,8 @@ function ProfilePage() {
       if (up.error) throw up.error;
       const { data } = supabase.storage.from("profile-media").getPublicUrl(path);
       const { error } = await supabase.rpc("update_profile_media", {
-        p_avatar_url: kind === "avatar" ? data.publicUrl : profile.avatar_url ?? null,
-        p_banner_url: kind === "banner" ? data.publicUrl : profile.banner_url ?? null,
+        p_avatar_url: kind === "avatar" ? data.publicUrl : profile.avatar_url ?? undefined,
+        p_banner_url: kind === "banner" ? data.publicUrl : profile.banner_url ?? undefined,
       });
       if (error) throw error;
       window.location.reload();
