@@ -47,7 +47,7 @@ function ProfilePage() {
     setSecurityError("");
     setSecurityMessage("");
     const cleanEmail = securityEmail.trim().toLowerCase();
-    if (!/^\\S+@\\S+\\.\\S+$/.test(cleanEmail)) {
+    if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) {
       setSecurityError("Введи корректный адрес электронной почты.");
       return;
     }
@@ -70,7 +70,7 @@ function ProfilePage() {
     setSecurityError("");
     setSecurityMessage("");
     const token = securityCode.trim();
-    if (!/^\\d{6}$/.test(token)) {
+    if (!/^\d{6}$/.test(token)) {
       setSecurityError("Введи шестизначный код из письма.");
       return;
     }
