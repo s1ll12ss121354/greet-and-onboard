@@ -151,7 +151,7 @@ function RootComponent() {
 }
 
 function SiteShell() {
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
 
   useEffect(() => {
