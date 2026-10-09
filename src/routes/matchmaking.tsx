@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Crown, LogIn, Plus, RefreshCw, Search, Shield, Users, X } from "lucide-react";
+import { Bot, Crown, LogIn, MessageCircle, Plus, RefreshCw, Search, Send, Shield, Users, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -27,6 +27,7 @@ type Lobby = {
 type Member = { id: string; user_id: string; member_kind: "player" | "spectator"; team: "alpha" | "bravo" | null; joined_at: string };
 type MapVote = { map_name: string; vote_count: number };
 type Player = { id: string; nickname: string; elo: number };
+type LobbyChatMessage = { id: string; user_id: string; nickname: string; message: string; created_at: string };
 
 const text = {
   ru: {
@@ -38,6 +39,7 @@ const text = {
     open:"Открытые лобби", join:"Присоединиться", full:"Заполнено", staff:"Staff", player:"Игрок",
     error:"Не удалось выполнить действие. Попробуйте ещё раз.", auth:"Для поиска игры войдите в аккаунт.",
     elo:"ELO", minute:"мин", lobby:"Лобби", copied:"Ник хоста",
+    chat:"Чат лобби", chatHint:"Сообщения видят только участники этого лобби.", chatPlaceholder:"Напиши сообщение…", chatEmpty:"Пока нет сообщений. Поздоровайся с командой!", chatSend:"Отправить", chatSetupError:"Чат пока не подключён. Примените SQL-миграцию lobby_chat из GitHub.",
   },
   en: {
     title:"Find a game", subtitle:"We match players with similar ELO and widen the range if the search takes longer.",
@@ -48,6 +50,7 @@ const text = {
     open:"Open lobbies", join:"Join", full:"Full", staff:"Staff", player:"Player",
     error:"Action failed. Please try again.", auth:"Log in to start matchmaking.",
     elo:"ELO", minute:"min", lobby:"Lobby", copied:"Host nickname",
+    chat:"Lobby chat", chatHint:"Only members of this lobby can read messages.", chatPlaceholder:"Write a message…", chatEmpty:"No messages yet. Say hello to your team!", chatSend:"Send", chatSetupError:"Chat is not configured yet. Apply the lobby_chat SQL migration from GitHub.",
   },
 } as const;
 
@@ -65,6 +68,11 @@ function MatchmakingPage() {
   const [readySeconds, setReadySeconds] = useState(60);
   const [openLobbies, setOpenLobbies] = useState<Lobby[]>([]);
   const [notifications, setNotifications] = useState<{id:string; message:string}[]>([]);
+  const [chatMessages, setChatMessages] = useState<LobbyChatMessage[]>([]);
+  const [chatDraft, setChatDraft] = useState("");
+  const [chatError, setChatError] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [resultOpen, setResultOpen] = useState(false);
@@ -161,6 +169,58 @@ function MatchmakingPage() {
     const timer = window.setInterval(() => loadLobby(lobby.id), 2000);
     return () => window.clearInterval(timer);
   }, [lobby?.id]);
+
+  useEffect(() => {
+    if (!lobby || !user) {
+      setChatMessages([]);
+      setChatError("");
+      return;
+    }
+
+    let active = true;
+    const refreshChat = async () => {
+      const { data, error: chatLoadError } = await supabase.rpc("lobby_chat_history", {
+        p_lobby_id: lobby.id,
+      });
+      if (!active) return;
+      if (chatLoadError) {
+        setChatError(chatLoadError.code === "PGRST202" || chatLoadError.message.includes("lobby_chat_history")
+          ? t.chatSetupError
+          : "Не удалось загрузить чат. Проверьте, что вы остались участником лобби.");
+        return;
+      }
+      setChatError("");
+      setChatMessages((data ?? []) as LobbyChatMessage[]);
+    };
+
+    void refreshChat();
+    const channel = supabase
+      .channel("lobby-chat-" + lobby.id)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "match_lobby_chat_messages",
+          filter: "lobby_id=eq." + lobby.id,
+        },
+        () => { void refreshChat(); },
+      )
+      .subscribe();
+    // Realtime is supplemented with polling so chat remains usable if a
+    // project's Realtime publication has not been enabled yet.
+    const poll = window.setInterval(() => void refreshChat(), 4000);
+
+    return () => {
+      active = false;
+      window.clearInterval(poll);
+      void supabase.removeChannel(channel);
+    };
+  }, [lobby?.id, user?.id]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [chatMessages[chatMessages.length - 1]?.id]);
 
   useEffect(() => {
     if (!lobby || lobby.status !== "ready_check") return;
@@ -281,6 +341,37 @@ function MatchmakingPage() {
     loadOpen();
   }
 
+  async function sendChatMessage() {
+    if (!lobby || !chatDraft.trim() || chatSending) return;
+    const message = chatDraft.trim();
+    if (message.length > 500) {
+      setChatError("Сообщение не должно быть длиннее 500 символов.");
+      return;
+    }
+
+    setChatSending(true);
+    setChatError("");
+    const { error: sendError } = await supabase.rpc("send_lobby_chat_message", {
+      p_lobby_id: lobby.id,
+      p_message: message,
+    });
+
+    if (sendError) {
+      setChatError(
+        sendError.code === "PGRST202" || sendError.message.includes("send_lobby_chat_message")
+          ? t.chatSetupError
+          : sendError.message.includes("CHAT_RATE_LIMIT")
+            ? "Слишком много сообщений подряд. Подожди несколько секунд."
+            : "Не удалось отправить сообщение. Возможно, вы уже покинули лобби."
+      );
+    } else {
+      setChatDraft("");
+      const { data } = await supabase.rpc("lobby_chat_history", { p_lobby_id: lobby.id });
+      if (data) setChatMessages(data as LobbyChatMessage[]);
+    }
+    setChatSending(false);
+  }
+
   async function submitResult() {
     if (!lobby || !user || lobby.host_user_id !== user.id || resultBusy) return;
     if (!resultScreenshot) { setError("Загрузите скриншот результата хоста."); return; }
@@ -368,6 +459,7 @@ function MatchmakingPage() {
 
       {lobby && (
         <section className="grid gap-5 lg:grid-cols-[1.5fr_.8fr]">
+          <div className="space-y-5">
           <div className="rounded-3xl border border-border bg-card p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -463,6 +555,64 @@ function MatchmakingPage() {
               </button>
             )}
             <button disabled={busy} onClick={leaveLobby} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-destructive/30 px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"><X className="size-4"/>{t.leave}</button>
+          </div>
+
+          <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 font-display text-lg font-bold"><MessageCircle className="size-5 text-primary"/>{t.chat}</div>
+                <p className="mt-1 text-xs text-muted-foreground">{t.chatHint}</p>
+              </div>
+              <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">{chatMessages.length} / 100</span>
+            </div>
+
+            <div className="mt-4 h-72 space-y-3 overflow-y-auto rounded-2xl border border-border bg-background/50 p-3">
+              {chatMessages.length === 0 && !chatError && (
+                <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">{t.chatEmpty}</div>
+              )}
+              {chatMessages.map((item) => (
+                <div key={item.id} className={item.user_id === user.id ? "flex justify-end" : "flex justify-start"}>
+                  <div className={item.user_id === user.id
+                    ? "max-w-[88%] rounded-2xl rounded-br-sm border border-primary/30 bg-primary/10 px-3 py-2"
+                    : "max-w-[88%] rounded-2xl rounded-bl-sm border border-border bg-card px-3 py-2"}>
+                    <div className="flex items-center gap-3">
+                      <span className="max-w-48 truncate text-xs font-extrabold">{item.user_id === user.id ? "Ты" : item.nickname}</span>
+                      <span className="text-[10px] text-muted-foreground">{new Date(item.created_at).toLocaleTimeString(language === "ru" ? "ru-RU" : "en-US", { hour: "2-digit", minute: "2-digit" })}</span>
+                    </div>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-sm">{item.message}</p>
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+
+            {chatError && <p className="mt-3 text-xs font-semibold text-destructive">{chatError}</p>}
+            <form className="mt-3 flex items-end gap-2" onSubmit={(event) => { event.preventDefault(); void sendChatMessage(); }}>
+              <textarea
+                value={chatDraft}
+                onChange={(event) => { setChatDraft(event.target.value); if (chatError) setChatError(""); }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    void sendChatMessage();
+                  }
+                }}
+                maxLength={500}
+                rows={2}
+                placeholder={t.chatPlaceholder}
+                aria-label={t.chatPlaceholder}
+                className="min-h-12 min-w-0 flex-1 resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+              <button
+                type="submit"
+                disabled={chatSending || !chatDraft.trim() || lobby.status === "cancelled"}
+                className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              >
+                <Send className="size-4"/><span className="hidden sm:inline">{chatSending ? "…" : t.chatSend}</span>
+              </button>
+            </form>
+            <p className="mt-2 text-[10px] text-muted-foreground">Enter — {language === "ru" ? "отправить" : "send"}, Shift+Enter — {language === "ru" ? "новая строка" : "new line"}</p>
+          </section>
           </div>
 
           <div className="rounded-3xl border border-border bg-card p-5 sm:p-6">
