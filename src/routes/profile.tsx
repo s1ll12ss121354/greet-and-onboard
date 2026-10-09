@@ -222,7 +222,7 @@ function ProfilePage() {
             autoComplete="one-time-code"
             maxLength={6}
             value={securityCode}
-            onChange={(e) => setSecurityCode(e.target.value.replace(/\\D/g, "").slice(0, 6))}
+            onChange={(e) => setSecurityCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             placeholder="6-значный код из письма"
             className="min-w-0 flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm"
           />
