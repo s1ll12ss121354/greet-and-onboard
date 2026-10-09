@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { brokeredPreviewStorage } from './previewAuthStorage';
 
+declare global {
+  interface Window {
+    __RECORN_SUPABASE_CONFIG__?: { url: string; publishableKey: string };
+  }
+}
+
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
 }
@@ -50,9 +56,11 @@ function createSupabaseClient() {
   // build-time environment injection can replace them in the browser bundle.
   // The process.env fallback is only for SSR/runtime server execution.
   const runtimeEnv = typeof process !== 'undefined' ? process.env : undefined;
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || runtimeEnv?.SUPABASE_URL;
+  const browserConfig = typeof window !== 'undefined' ? window.__RECORN_SUPABASE_CONFIG__ : undefined;
+  const SUPABASE_URL =
+    import.meta.env.VITE_SUPABASE_URL || browserConfig?.url || runtimeEnv?.SUPABASE_URL || runtimeEnv?.VITE_SUPABASE_URL;
   const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || runtimeEnv?.SUPABASE_PUBLISHABLE_KEY;
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || browserConfig?.publishableKey || runtimeEnv?.SUPABASE_PUBLISHABLE_KEY || runtimeEnv?.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
