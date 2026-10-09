@@ -106,8 +106,8 @@ function ProfilePage() {
       if (up.error) throw up.error;
       const { data } = supabase.storage.from("profile-media").getPublicUrl(path);
       const { error } = await supabase.rpc("update_profile_media", {
-        p_avatar_url: kind === "avatar" ? data.publicUrl : profile.avatar_url ?? undefined,
-        p_banner_url: kind === "banner" ? data.publicUrl : profile.banner_url ?? undefined,
+        p_avatar_url: kind === "avatar" ? data.publicUrl : (profile.avatar_url ?? ""),
+        p_banner_url: kind === "banner" ? data.publicUrl : (profile.banner_url ?? ""),
       });
       if (error) throw error;
       window.location.reload();

@@ -180,8 +180,8 @@ function AdminPage() {
     const { error } = await supabase.rpc("admin_set_report_status", {
       p_report_id: report.id,
       p_status: status,
-      p_ban_minutes: status === "resolved" ? banMinutes : null,
-      p_ban_reason: status === "resolved" ? banReason : null,
+      p_ban_minutes: status === "resolved" ? banMinutes ?? undefined : undefined,
+      p_ban_reason: status === "resolved" ? banReason : undefined,
     });
     setBusy(false);
     if (!error) setBanDialogReport(null);
