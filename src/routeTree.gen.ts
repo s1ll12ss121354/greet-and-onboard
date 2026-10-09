@@ -14,11 +14,13 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as HostRouteImport } from './routes/host'
+import { Route as MatchFoundRouteImport } from './routes/match-found'
+import { Route as MatchmakingRouteImport } from './routes/matchmaking'
 import { Route as PlayersRouteImport } from './routes/players'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as MatchmakingRouteImport } from './routes/matchmaking'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as SupportTelegramRouteImport } from './routes/support-telegram'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -45,6 +47,16 @@ const HostRoute = HostRouteImport.update({
   path: '/host',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MatchFoundRoute = MatchFoundRouteImport.update({
+  id: '/match-found',
+  path: '/match-found',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchmakingRoute = MatchmakingRouteImport.update({
+  id: '/matchmaking',
+  path: '/matchmaking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlayersRoute = PlayersRouteImport.update({
   id: '/players',
   path: '/players',
@@ -60,14 +72,14 @@ const ReportsRoute = ReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MatchmakingRoute = MatchmakingRouteImport.update({
-  id: '/matchmaking',
-  path: '/matchmaking',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportTelegramRoute = SupportTelegramRouteImport.update({
+  id: '/support-telegram',
+  path: '/support-telegram',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -77,11 +89,13 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/history': typeof HistoryRoute
   '/host': typeof HostRoute
+  '/match-found': typeof MatchFoundRoute
+  '/matchmaking': typeof MatchmakingRoute
   '/players': typeof PlayersRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
-  '/matchmaking': typeof MatchmakingRoute
   '/support': typeof SupportRoute
+  '/support-telegram': typeof SupportTelegramRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -89,11 +103,13 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/history': typeof HistoryRoute
   '/host': typeof HostRoute
+  '/match-found': typeof MatchFoundRoute
+  '/matchmaking': typeof MatchmakingRoute
   '/players': typeof PlayersRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
-  '/matchmaking': typeof MatchmakingRoute
   '/support': typeof SupportRoute
+  '/support-telegram': typeof SupportTelegramRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,12 +118,13 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/history': typeof HistoryRoute
   '/host': typeof HostRoute
+  '/match-found': typeof MatchFoundRoute
+  '/matchmaking': typeof MatchmakingRoute
   '/players': typeof PlayersRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
-  '/matchmaking': typeof MatchmakingRoute
-
   '/support': typeof SupportRoute
+  '/support-telegram': typeof SupportTelegramRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,11 +134,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/history'
     | '/host'
+    | '/match-found'
+    | '/matchmaking'
     | '/players'
     | '/profile'
     | '/reports'
-    | '/matchmaking'
     | '/support'
+    | '/support-telegram'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,11 +148,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/history'
     | '/host'
+    | '/match-found'
+    | '/matchmaking'
     | '/players'
     | '/profile'
     | '/reports'
-    | '/matchmaking'
     | '/support'
+    | '/support-telegram'
   id:
     | '__root__'
     | '/'
@@ -141,11 +162,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/history'
     | '/host'
+    | '/match-found'
+    | '/matchmaking'
     | '/players'
     | '/profile'
     | '/reports'
-    | '/matchmaking'
     | '/support'
+    | '/support-telegram'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -154,11 +177,13 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   HistoryRoute: typeof HistoryRoute
   HostRoute: typeof HostRoute
+  MatchFoundRoute: typeof MatchFoundRoute
+  MatchmakingRoute: typeof MatchmakingRoute
   PlayersRoute: typeof PlayersRoute
   ProfileRoute: typeof ProfileRoute
   ReportsRoute: typeof ReportsRoute
-  MatchmakingRoute: typeof MatchmakingRoute
   SupportRoute: typeof SupportRoute
+  SupportTelegramRoute: typeof SupportTelegramRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -198,6 +223,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HostRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/match-found': {
+      id: '/match-found'
+      path: '/match-found'
+      fullPath: '/match-found'
+      preLoaderRoute: typeof MatchFoundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/matchmaking': {
+      id: '/matchmaking'
+      path: '/matchmaking'
+      fullPath: '/matchmaking'
+      preLoaderRoute: typeof MatchmakingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/players': {
       id: '/players'
       path: '/players'
@@ -219,18 +258,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/matchmaking': {
-      id: '/matchmaking'
-      path: '/matchmaking'
-      fullPath: '/matchmaking'
-      preLoaderRoute: typeof MatchmakingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/support': {
       id: '/support'
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support-telegram': {
+      id: '/support-telegram'
+      path: '/support-telegram'
+      fullPath: '/support-telegram'
+      preLoaderRoute: typeof SupportTelegramRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -242,11 +281,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   HistoryRoute: HistoryRoute,
   HostRoute: HostRoute,
+  MatchFoundRoute: MatchFoundRoute,
+  MatchmakingRoute: MatchmakingRoute,
   PlayersRoute: PlayersRoute,
   ProfileRoute: ProfileRoute,
   ReportsRoute: ReportsRoute,
-  MatchmakingRoute: MatchmakingRoute,
   SupportRoute: SupportRoute,
+  SupportTelegramRoute: SupportTelegramRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
