@@ -27,142 +27,14 @@ export const Route = createFileRoute("/profile")({
 });
 
 function ProfilePage() {
-  const { profile, roles, loading, user, session } = useAuth();
+  const { profile, roles, loading, user } = useAuth();
   const [uploading, setUploading] = useState<"avatar" | "banner" | null>(null);
-  const [securityEmail, setSecurityEmail] = useState("");
-  const [securityCode, setSecurityCode] = useState("");
-  const [securityStep, setSecurityStep] = useState<"email" | "code">("email");
-  const [securityBusy, setSecurityBusy] = useState(false);
-  const [securityMessage, setSecurityMessage] = useState("");
-  const [securityError, setSecurityError] = useState("");
   const avatarRef = useRef<HTMLInputElement>(null);
   const bannerRef = useRef<HTMLInputElement>(null);
   if (loading) return <div className="text-muted-foreground">Загрузка...</div>;
   if (!user || !profile) return <div className="mx-auto max-w-xl rounded-2xl border border-border bg-card p-8 text-center"><p>Войдите или зарегистрируйтесь по нику Roblox.</p><Link to="/auth" className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Войти</Link></div>;
   const matches = profile.wins + profile.losses;
-  const hasBoundEmail = !!user.email && !user.email.endsWith("@recorn.player");
 
-  async function requestEmailBinding(e: React.FormEvent) {
-    e.preventDefault();
-    setSecurityError("");
-    setSecurityMessage("");
-    const cleanEmail = securityEmail.trim().toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) {
-      setSecurityError("Введи корректный адрес электронной почты.");
-      return;
-    }
-    setSecurityBusy(true);
-    try {
-      // Use the signed-in user's access token explicitly for Supabase Auth.
-      // This avoids AuthSessionMissingError from the SDK's internal session
-      // cache while the profile is still rendered from the valid hook session.
-      if (!session || session.user.id !== user.id) {
-        throw new Error("Сессия входа не найдена. Выйди из аккаунта, войди заново и повтори привязку почты.");
-      }
-
-      const supabaseUrl = supabase.supabaseUrl.replace(/\/+$/, "");
-      const apiKey = supabase.supabaseKey;
-      let accessToken = session.access_token;
-
-      const requestEmailChange = async (token: string) => {
-        const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
-          method: "PUT",
-          headers: {
-            apikey: apiKey,
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email: cleanEmail }),
-        });
-        const payload = await response.json().catch(() => ({} as Record<string, unknown>));
-        return { response, payload: payload as Record<string, unknown> };
-      };
-
-      let emailChange = await requestEmailChange(accessToken);
-
-      // Access tokens expire quickly. If the API says this token is expired,
-      // refresh using the user's refresh token and retry once.
-      if (emailChange.response.status === 401) {
-        const refreshResponse = await fetch(
-          `${supabaseUrl}/auth/v1/token?grant_type=refresh_token`,
-          {
-            method: "POST",
-            headers: {
-              apikey: apiKey,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ refresh_token: session.refresh_token }),
-          },
-        );
-        const refreshPayload = await refreshResponse.json().catch(() => ({} as Record<string, unknown>)) as Record<string, unknown>;
-        if (
-          !refreshResponse.ok ||
-          typeof refreshPayload.access_token !== "string" ||
-          typeof refreshPayload.refresh_token !== "string"
-        ) {
-          throw new Error("Сессия Supabase истекла. Выйди из аккаунта и войди снова, затем повтори привязку почты.");
-        }
-
-        accessToken = refreshPayload.access_token;
-        try {
-          await supabase.auth.setSession({
-            access_token: refreshPayload.access_token,
-            refresh_token: refreshPayload.refresh_token,
-          });
-        } catch {
-          // The explicit access token below still allows this verified request;
-          // auth state will be re-read after email confirmation.
-        }
-
-        emailChange = await requestEmailChange(accessToken);
-      }
-
-      if (!emailChange.response.ok) {
-        const message =
-          emailChange.payload.msg ??
-          emailChange.payload.message ??
-          emailChange.payload.error_description ??
-          emailChange.payload.error ??
-          `Supabase Auth вернул ошибку (${emailChange.response.status}).`;
-        throw new Error(String(message));
-      }
-      setSecurityEmail(cleanEmail);
-      setSecurityStep("code");
-      setSecurityMessage("Код отправлен на почту. Введи его ниже, чтобы завершить привязку.");
-    } catch (e) {
-      setSecurityError(e instanceof Error ? e.message : "Не удалось отправить код.");
-    } finally {
-      setSecurityBusy(false);
-    }
-  }
-
-  async function verifyEmailBinding(e: React.FormEvent) {
-    e.preventDefault();
-    setSecurityError("");
-    setSecurityMessage("");
-    const token = securityCode.trim();
-    if (!/^\d{6}$/.test(token)) {
-      setSecurityError("Введи шестизначный код из письма.");
-      return;
-    }
-    setSecurityBusy(true);
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: securityEmail.trim().toLowerCase(),
-        token,
-        type: "email_change",
-      });
-      if (error) throw error;
-      setSecurityMessage("Почта успешно привязана. Теперь можно восстановить пароль через неё.");
-      setSecurityStep("email");
-      setSecurityCode("");
-      window.location.reload();
-    } catch (e) {
-      setSecurityError(e instanceof Error ? e.message : "Код неверный или устарел.");
-    } finally {
-      setSecurityBusy(false);
-    }
-  }
   const level = faceitLevel(profile.elo);
   async function uploadMedia(kind: "avatar" | "banner", file: File) {
     if (!user || !profile) return;
@@ -264,50 +136,6 @@ function ProfilePage() {
           </div>
         </div>
       </div>
-    </section>
-    <section className="mt-6 rounded-2xl border border-border bg-card p-5">
-      <h2 className="font-display text-lg font-bold">Безопасность аккаунта</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {hasBoundEmail ? `Привязанная почта: ${user.email}` : "Привяжи настоящую почту, чтобы восстановить доступ, если забудешь пароль."}
-      </p>
-      {securityStep === "email" ? (
-        <form onSubmit={requestEmailBinding} className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <input
-            required
-            type="email"
-            autoComplete="email"
-            value={securityEmail}
-            onChange={(e) => setSecurityEmail(e.target.value)}
-            placeholder={hasBoundEmail ? "Новая почта для привязки" : "Твоя электронная почта"}
-            className="min-w-0 flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm"
-          />
-          <button disabled={securityBusy} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60">
-            {securityBusy ? "Отправка..." : hasBoundEmail ? "Изменить почту" : "Привязать почту"}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={verifyEmailBinding} className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <input
-            required
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            value={securityCode}
-            onChange={(e) => setSecurityCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="6-значный код из письма"
-            className="min-w-0 flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm"
-          />
-          <button disabled={securityBusy} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60">
-            {securityBusy ? "Проверка..." : "Подтвердить код"}
-          </button>
-          <button type="button" disabled={securityBusy} onClick={() => { setSecurityStep("email"); setSecurityCode(""); setSecurityMessage(""); }} className="rounded-lg bg-secondary px-4 py-2.5 text-sm font-bold">
-            Назад
-          </button>
-        </form>
-      )}
-      {securityMessage && <p role="status" className="mt-3 text-sm text-primary">{securityMessage}</p>}
-      {securityError && <p role="alert" className="mt-3 text-sm text-destructive">{securityError}</p>}
-      <p className="mt-3 text-xs text-muted-foreground">После привязки вход выполняется по почте. Восстановление пароля доступно на странице входа.</p>
     </section>
     <section className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">{stats.map(({label,value,icon:Icon,valueClass})=><div key={label} className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</span><Icon className="size-4 text-muted-foreground"/></div><div className={`font-display mt-3 text-3xl font-bold ${valueClass}`}>{value}</div></div>)}</section>
     <section className="mt-8"><h2 className="font-display text-lg font-bold uppercase tracking-wide">История матчей</h2><div className="grid-bg mt-4 flex h-40 items-center justify-center rounded-2xl border border-border bg-card"><p className="text-sm text-muted-foreground">У игрока пока нет матчей.</p></div></section>
