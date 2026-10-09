@@ -9,7 +9,7 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -145,15 +145,101 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background">
-        <ActivityTracker />
-        <MatchStartNotifier />
-        <AppSidebar />
-        <main className="min-h-screen min-w-0 px-3 pb-8 pt-24 sm:px-5 lg:px-8 lg:pt-28">
-          <Outlet />
-        </main>
-      </div>
+      <SiteShell />
     </QueryClientProvider>
+  );
+}
+
+function SiteShell() {
+  const { user, profile } = useAuth();
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const refreshMaintenance = async () => {
+      try {
+        const { data, error } = await supabase.rpc("get_site_maintenance");
+        if (active && !error) setMaintenanceEnabled(Boolean(data));
+      } catch {
+        // If the backend is unreachable, don't cache a false status forever.
+      }
+    };
+
+    void refreshMaintenance();
+    const timer = window.setInterval(() => void refreshMaintenance(), 10000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const isOwner = profile?.nickname.trim().toLowerCase() === "isy_hesy09";
+
+  if (maintenanceEnabled && !isOwner) {
+    return <MaintenanceScreen />;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <ActivityTracker />
+      <MatchStartNotifier />
+      <AppSidebar />
+      <main className="min-h-screen min-w-0 px-3 pb-8 pt-24 sm:px-5 lg:px-8 lg:pt-28">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
+function MaintenanceScreen() {
+  const snippets = [
+    "const recorn = await start();",
+    "if (status === 'offline') {",
+    "  await repair(backend);",
+    "return deploy('stable');",
+    "SELECT * FROM matches;",
+    "while (system.ready) {",
+    "  sync(players);",
+    "  await healthcheck();",
+    "01001110 01000101",
+    "const lobby = new Lobby();",
+    "try { await migrate(); }",
+    "catch (error) { retry(); }",
+  ];
+
+  return (
+    <main className="maintenance-screen" role="status" aria-live="polite">
+      <div className="maintenance-code-layer" aria-hidden="true">
+        {Array.from({ length: 22 }, (_, index) => (
+          <div
+            key={index}
+            className="maintenance-code-column"
+            style={{
+              left: `${(index * 4.8) % 104}%`,
+              animationDelay: `-${(index * 1.71) % 27}s`,
+              animationDuration: `${18 + (index % 7) * 3}s`,
+            }}
+          >
+            {Array.from({ length: 11 }, (_, line) => (
+              <span key={line}>{snippets[(index * 3 + line) % snippets.length]}</span>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="maintenance-vignette" aria-hidden="true" />
+      <section className="maintenance-card">
+        <div className="maintenance-brand"><span className="maintenance-brand-mark">R</span> RECORN <span className="maintenance-brand-line" /></div>
+        <div className="maintenance-status"><span className="maintenance-status-dot" /> ОБСЛУЖИВАНИЕ СИСТЕМЫ</div>
+        <div className="maintenance-title">Тех.<span>Работы</span></div>
+        <p className="maintenance-copy">Мы обновляем систему, чтобы матчи работали стабильнее. Скоро вернёмся.</p>
+        <div className="maintenance-progress"><span /></div>
+        <div className="maintenance-support-label">НУЖНА ПОМОЩЬ?</div>
+        <a className="maintenance-support" href="https://t.me/s1l3nt123" target="_blank" rel="noreferrer">
+          Поддержка: <strong>@s1l3nt123</strong>
+        </a>
+        <div className="maintenance-footnote">RECORN COMPETITIVE NETWORK <span>•</span> PLEASE STAND BY</div>
+      </section>
+    </main>
   );
 }
 
