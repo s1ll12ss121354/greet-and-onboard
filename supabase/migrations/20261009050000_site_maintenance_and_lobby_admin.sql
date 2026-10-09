@@ -42,19 +42,12 @@ SET search_path = ''
 AS $$
 DECLARE
   actor uuid := (SELECT auth.uid());
-  owner_nickname text;
 BEGIN
   IF actor IS NULL THEN
     RAISE EXCEPTION 'AUTH_REQUIRED';
   END IF;
 
-  SELECT lower(trim(p.nickname))
-  INTO owner_nickname
-  FROM public.profiles AS p
-  WHERE p.id = actor;
-
-  IF owner_nickname IS DISTINCT FROM 'isy_hesy09'
-     OR NOT public.is_recorn_owner(actor) THEN
+  IF NOT public.is_recorn_owner(actor) THEN
     RAISE EXCEPTION 'OWNER_ONLY';
   END IF;
 
@@ -84,18 +77,12 @@ SET search_path = ''
 AS $$
 DECLARE
   actor uuid := (SELECT auth.uid());
-  owner_nickname text;
 BEGIN
   IF actor IS NULL THEN
     RAISE EXCEPTION 'AUTH_REQUIRED';
   END IF;
 
-  SELECT lower(trim(p.nickname))
-  INTO owner_nickname
-  FROM public.profiles AS p
-  WHERE p.id = actor;
-
-  IF owner_nickname IS DISTINCT FROM 'isy_hesy09'
+  IF NOT public.is_recorn_owner(actor)
      AND NOT public.has_role(actor, 'admin'::public.app_role) THEN
     RAISE EXCEPTION 'ADMIN_OR_OWNER_ONLY';
   END IF;
