@@ -759,7 +759,7 @@ export type Database = {
       }
       owner_grant_admin: { Args: { p_user_id: string }; Returns: boolean }
       get_site_maintenance: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: boolean
       }
       public_leaderboard: {
