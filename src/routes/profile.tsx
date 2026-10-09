@@ -60,7 +60,7 @@ function ProfilePage() {
         throw new Error("Сессия входа не найдена. Выйди из аккаунта, войди заново и повтори привязку почты.");
       }
 
-      const supabaseUrl = supabase.supabaseUrl.replace(/\\/+$/, "");
+      const supabaseUrl = supabase.supabaseUrl.replace(/\/+$/, "");
       const apiKey = supabase.supabaseKey;
       let accessToken = session.access_token;
 
@@ -126,7 +126,6 @@ function ProfilePage() {
           `Supabase Auth вернул ошибку (${emailChange.response.status}).`;
         throw new Error(String(message));
       }
-      if (error) throw error;
       setSecurityEmail(cleanEmail);
       setSecurityStep("code");
       setSecurityMessage("Код отправлен на почту. Введи его ниже, чтобы завершить привязку.");
