@@ -273,35 +273,6 @@ export type Database = {
         }
         Relationships: []
       }
-      match_lobby_map_votes: {
-        Row: {
-          created_at: string
-          lobby_id: string
-          map_name: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          lobby_id: string
-          map_name: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          lobby_id?: string
-          map_name?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "match_lobby_map_votes_lobby_id_fkey"
-            columns: ["lobby_id"]
-            isOneToOne: false
-            referencedRelation: "match_lobbies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       match_lobby_chat_messages: {
         Row: {
           created_at: string
@@ -333,7 +304,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      },
+      }
+      match_lobby_kicks: {
+        Row: {
+          kicked_at: string
+          kicked_by: string
+          lobby_id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          kicked_at?: string
+          kicked_by: string
+          lobby_id: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          kicked_at?: string
+          kicked_by?: string
+          lobby_id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_lobby_kicks_lobby_id_fkey"
+            columns: ["lobby_id"]
+            isOneToOne: false
+            referencedRelation: "match_lobbies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_lobby_map_votes: {
+        Row: {
+          created_at: string
+          lobby_id: string
+          map_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          lobby_id: string
+          map_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          lobby_id?: string
+          map_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_lobby_map_votes_lobby_id_fkey"
+            columns: ["lobby_id"]
+            isOneToOne: false
+            referencedRelation: "match_lobbies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_lobby_members: {
         Row: {
           id: string
@@ -496,6 +528,27 @@ export type Database = {
         }
         Relationships: []
       }
+      recorn_site_control: {
+        Row: {
+          id: boolean
+          maintenance_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          maintenance_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          maintenance_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           created_at: string
@@ -645,6 +698,7 @@ export type Database = {
         Args: { p_role_id: string; p_user_id: string }
         Returns: boolean
       }
+      admin_close_lobby: { Args: { p_lobby_id: string }; Returns: boolean }
       admin_create_custom_role: {
         Args: { p_color?: string; p_description?: string; p_name: string }
         Returns: string
@@ -655,10 +709,6 @@ export type Database = {
       }
       admin_remove_custom_role: {
         Args: { p_role_id: string; p_user_id: string }
-        Returns: boolean
-      }
-      admin_close_lobby: {
-        Args: { p_lobby_id: string }
         Returns: boolean
       }
       admin_review_host_application: {
@@ -678,6 +728,8 @@ export type Database = {
         Args: { p_enabled: boolean; p_user_id: string }
         Returns: boolean
       }
+      close_idle_lobbies: { Args: never; Returns: number }
+      get_site_maintenance: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -700,11 +752,7 @@ export type Database = {
           nickname: string
           user_id: string
         }[]
-      },
-      send_lobby_chat_message: {
-        Args: { p_lobby_id: string; p_message: string }
-        Returns: string
-      },
+      }
       lobby_public_profiles: {
         Args: { p_lobby_id: string }
         Returns: {
@@ -727,6 +775,10 @@ export type Database = {
       mm_join_lobby: {
         Args: { p_lobby_id: string; p_spectator?: boolean }
         Returns: Json
+      }
+      mm_kick_lobby_member: {
+        Args: { p_lobby_id: string; p_reason?: string; p_user_id: string }
+        Returns: boolean
       }
       mm_leave_lobby: { Args: { p_lobby_id: string }; Returns: boolean }
       mm_open_lobbies: {
@@ -753,13 +805,9 @@ export type Database = {
         Args: { p_lobby_id: string; p_map_name: string }
         Returns: Json
       }
+      owner_grant_admin: { Args: { p_user_id: string }; Returns: boolean }
       owner_set_site_maintenance: {
         Args: { p_enabled: boolean }
-        Returns: boolean
-      }
-      owner_grant_admin: { Args: { p_user_id: string }; Returns: boolean }
-      get_site_maintenance: {
-        Args: never
         Returns: boolean
       }
       public_leaderboard: {
@@ -776,6 +824,10 @@ export type Database = {
       review_ban_request: {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: boolean
+      }
+      send_lobby_chat_message: {
+        Args: { p_lobby_id: string; p_message: string }
+        Returns: string
       }
       submit_match_result: {
         Args: { p_lobby_id: string; p_players: Json; p_screenshot_path: string }
