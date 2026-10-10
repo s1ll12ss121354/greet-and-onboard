@@ -58,9 +58,9 @@ function createSupabaseClient() {
   const runtimeEnv = typeof process !== 'undefined' ? process.env : undefined;
   const browserConfig = typeof window !== 'undefined' ? window.__RECORN_SUPABASE_CONFIG__ : undefined;
   const SUPABASE_URL =
-    import.meta.env.VITE_SUPABASE_URL || browserConfig?.url || runtimeEnv?.["SUPABASE_URL"] || runtimeEnv?.["VITE_SUPABASE_URL"];
+    import.meta.env["VITE_SUPABASE_URL"] || browserConfig?.url || runtimeEnv?.["SUPABASE_URL"] || runtimeEnv?.["VITE_SUPABASE_URL"];
   const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || browserConfig?.publishableKey || runtimeEnv?.["SUPABASE_PUBLISHABLE_KEY"] || runtimeEnv?.["VITE_SUPABASE_PUBLISHABLE_KEY"];
+    import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || browserConfig?.publishableKey || runtimeEnv?.["SUPABASE_PUBLISHABLE_KEY"] || runtimeEnv?.["VITE_SUPABASE_PUBLISHABLE_KEY"];
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
