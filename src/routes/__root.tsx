@@ -84,8 +84,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   loader: () => {
     const env = typeof process !== "undefined" ? process.env : undefined;
     return {
-      supabaseUrl: env?.SUPABASE_URL ?? env?.VITE_SUPABASE_URL ?? null,
-      supabasePublishableKey: env?.SUPABASE_PUBLISHABLE_KEY ?? env?.VITE_SUPABASE_PUBLISHABLE_KEY ?? null,
+      supabaseUrl: env?.["SUPABASE_URL"] ?? env?.["VITE_SUPABASE_URL"] ?? null,
+      supabasePublishableKey: env?.["SUPABASE_PUBLISHABLE_KEY"] ?? env?.["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? null,
     };
   },
   head: () => ({
