@@ -16,8 +16,8 @@ function isNewSupabaseApiKey(value: string): boolean {
 // The public URL can be reachable only from the browser, so server requests go to the runtime URL of the same backend.
 function serverSupabaseUrl(publicUrl: string, supabaseKey: string): string | undefined {
   if (typeof window !== 'undefined' || typeof process === 'undefined') return undefined;
-  const serverUrl = process.env.SUPABASE_URL?.replace(/\/+$/, '');
-  if (!serverUrl || serverUrl === publicUrl || process.env.SUPABASE_PUBLISHABLE_KEY !== supabaseKey) return undefined;
+  const serverUrl = process.env["SUPABASE_URL"]?.replace(/\/+$/, '');
+  if (!serverUrl || serverUrl === publicUrl || process.env["SUPABASE_PUBLISHABLE_KEY"] !== supabaseKey) return undefined;
   return serverUrl;
 }
 
@@ -58,9 +58,9 @@ function createSupabaseClient() {
   const runtimeEnv = typeof process !== 'undefined' ? process.env : undefined;
   const browserConfig = typeof window !== 'undefined' ? window.__RECORN_SUPABASE_CONFIG__ : undefined;
   const SUPABASE_URL =
-    import.meta.env.VITE_SUPABASE_URL || browserConfig?.url || runtimeEnv?.SUPABASE_URL || runtimeEnv?.VITE_SUPABASE_URL;
+    import.meta.env["VITE_SUPABASE_URL"] || browserConfig?.url || runtimeEnv?.["SUPABASE_URL"] || runtimeEnv?.["VITE_SUPABASE_URL"];
   const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || browserConfig?.publishableKey || runtimeEnv?.SUPABASE_PUBLISHABLE_KEY || runtimeEnv?.VITE_SUPABASE_PUBLISHABLE_KEY;
+    import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || browserConfig?.publishableKey || runtimeEnv?.["SUPABASE_PUBLISHABLE_KEY"] || runtimeEnv?.["VITE_SUPABASE_PUBLISHABLE_KEY"];
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
