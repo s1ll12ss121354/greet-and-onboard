@@ -805,6 +805,7 @@ export type Database = {
         Args: { p_lobby_id: string; p_map_name: string }
         Returns: Json
       }
+      online_players_count: { Args: never; Returns: number }
       owner_grant_admin: { Args: { p_user_id: string }; Returns: boolean }
       owner_set_site_maintenance: {
         Args: { p_enabled: boolean }

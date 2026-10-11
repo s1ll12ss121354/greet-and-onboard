@@ -350,5 +350,16 @@ function ActivityTracker() {
     });
   }, [user?.id, pathname]);
 
+  // Keep presence fresh site-wide so the online counter stays accurate.
+  useEffect(() => {
+    if (!user) return;
+    const ping = () => {
+      void supabase.rpc("touch_presence").then(() => {}, () => {});
+    };
+    ping();
+    const timer = window.setInterval(ping, 60000);
+    return () => window.clearInterval(timer);
+  }, [user?.id]);
+
   return null;
 }

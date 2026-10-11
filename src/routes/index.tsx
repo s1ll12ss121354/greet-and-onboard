@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ArrowUpRight, BarChart3, Check, ChevronRight, Crosshair, Heart, Radio, ShieldCheck, Swords, Trophy, Users, Zap } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,6 +19,41 @@ const FEATURES = [
   { icon: ShieldCheck, number: "03", title: "FAIR PLAY", text: "Репорты, модерация и хосты объединены в одну систему контроля.", to: "/reports" },
 ];
 
+function OnlineBadge() {
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const { data, error } = await supabase.rpc("online_players_count");
+        if (active && !error) setCount(Number(data) || 0);
+      } catch {
+        // Keep the last known value if the backend is briefly unreachable.
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 30000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  return (
+    <div className="inline-flex items-center gap-2 border border-border bg-background px-3 py-2 text-[9px] font-extrabold uppercase tracking-[.22em]">
+      <span className="relative flex size-1.5">
+        <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
+        <span className="relative inline-flex size-1.5 rounded-full bg-success" />
+      </span>
+      Online / Operational
+      <span className="border-l border-border pl-2 text-success">
+        {count === null ? "…" : `${count} в сети`}
+      </span>
+    </div>
+  );
+}
+
 function HomePage() {
   return (
     <div className="mx-auto max-w-[1420px] space-y-4">
@@ -27,9 +64,7 @@ function HomePage() {
         <div className="relative grid min-h-[610px] lg:grid-cols-[1.15fr_.85fr]">
           <div className="flex flex-col justify-between p-7 sm:p-10 lg:p-14">
             <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 border border-border bg-background px-3 py-2 text-[9px] font-extrabold uppercase tracking-[.22em]">
-                <span className="size-1.5 rounded-full bg-success" /> Online / Operational
-              </div>
+              <OnlineBadge />
               <span className="hidden text-[9px] font-extrabold uppercase tracking-[.25em] text-muted-foreground sm:block">RC-01 / 2026</span>
             </div>
 
