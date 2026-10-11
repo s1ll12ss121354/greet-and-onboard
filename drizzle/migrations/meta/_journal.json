@@ -29,6 +29,13 @@
       "when": 1791532431074,
       "tag": "0003_add_missing_columns_and_admin_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791730098110,
+      "tag": "0004_online_players_count",
+      "breakpoints": true
     }
   ]
 }
