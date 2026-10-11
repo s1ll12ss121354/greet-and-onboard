@@ -32,7 +32,7 @@ export const submitSupportTicket = createServerFn({ method: "POST" })
       const list = upd?.result ?? [];
       for (let i = list.length - 1; i >= 0 && !chatId; i--) {
         const u = list[i];
-        chatId = (u.message ?? u.my_chat_member ?? u.channel_post)?.chat?.id;
+        chatId = (u?.["message"] ?? u?.["my_chat_member"] ?? u?.["channel_post"])?.chat?.id;
       }
     }
     if (!chatId) return { ok: false as const, error: "NOT_CONFIGURED" };
