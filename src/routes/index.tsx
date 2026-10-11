@@ -64,9 +64,7 @@ function HomePage() {
         <div className="relative grid min-h-[610px] lg:grid-cols-[1.15fr_.85fr]">
           <div className="flex flex-col justify-between p-7 sm:p-10 lg:p-14">
             <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 border border-border bg-background px-3 py-2 text-[9px] font-extrabold uppercase tracking-[.22em]">
-                <span className="size-1.5 rounded-full bg-success" /> Online / Operational
-              </div>
+              <OnlineBadge />
               <span className="hidden text-[9px] font-extrabold uppercase tracking-[.25em] text-muted-foreground sm:block">RC-01 / 2026</span>
             </div>
 
