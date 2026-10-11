@@ -19,6 +19,41 @@ const FEATURES = [
   { icon: ShieldCheck, number: "03", title: "FAIR PLAY", text: "Репорты, модерация и хосты объединены в одну систему контроля.", to: "/reports" },
 ];
 
+function OnlineBadge() {
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const { data, error } = await supabase.rpc("online_players_count");
+        if (active && !error) setCount(Number(data) || 0);
+      } catch {
+        // Keep the last known value if the backend is briefly unreachable.
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 30000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  return (
+    <div className="inline-flex items-center gap-2 border border-border bg-background px-3 py-2 text-[9px] font-extrabold uppercase tracking-[.22em]">
+      <span className="relative flex size-1.5">
+        <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
+        <span className="relative inline-flex size-1.5 rounded-full bg-success" />
+      </span>
+      Online / Operational
+      <span className="border-l border-border pl-2 text-success">
+        {count === null ? "…" : `${count} в сети`}
+      </span>
+    </div>
+  );
+}
+
 function HomePage() {
   return (
     <div className="mx-auto max-w-[1420px] space-y-4">
