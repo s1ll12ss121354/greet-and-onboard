@@ -20,13 +20,22 @@ export const submitSupportTicket = createServerFn({ method: "POST" })
   .inputValidator((data) => supportSchema.parse(data))
   .handler(async ({ data }) => {
     const token = process.env["TELEGRAM_BOT_TOKEN"];
-    // Support recipient chat (not a secret). Env var kept only as override if it isn't the bot's own ID.
+    if (!token) return { ok: false as const, error: "NOT_CONFIGURED" };
     const envChat = process.env["TELEGRAM_CHAT_ID"];
-    const botId = (process.env["TELEGRAM_BOT_TOKEN"] ?? "").split(":")[0];
-    const chatId = envChat && envChat !== botId ? envChat : "8637901616";
-    if (!token || !chatId) {
-      return { ok: false as const, error: "NOT_CONFIGURED" };
+    const botId = token.split(":")[0];
+    let chatId: string | number | undefined = envChat && envChat !== botId ? envChat : undefined;
+    if (!chatId) {
+      // Auto-discover: use the latest chat that pressed Start / wrote to the bot.
+      const upd = (await fetch(`https://api.telegram.org/bot${token}/getUpdates`).then((r) => r.json()).catch(() => null)) as
+        | { result?: Array<Record<string, { chat?: { id: number } } | undefined>> }
+        | null;
+      const list = upd?.result ?? [];
+      for (let i = list.length - 1; i >= 0 && !chatId; i--) {
+        const u = list[i];
+        chatId = (u.message ?? u.my_chat_member ?? u.channel_post)?.chat?.id;
+      }
     }
+    if (!chatId) return { ok: false as const, error: "NOT_CONFIGURED" };
 
     const lines = [
       "<b>Новое обращение RECORN</b>",
