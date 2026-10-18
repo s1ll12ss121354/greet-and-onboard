@@ -100,6 +100,77 @@ export type Database = {
           },
         ]
       }
+      clan_members: {
+        Row: {
+          clan_id: string
+          id: string
+          joined_at: string
+          member_role: string
+          user_id: string
+        }
+        Insert: {
+          clan_id: string
+          id?: string
+          joined_at?: string
+          member_role?: string
+          user_id: string
+        }
+        Update: {
+          clan_id?: string
+          id?: string
+          joined_at?: string
+          member_role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_members_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clans: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          leader_id: string
+          logo_path: string | null
+          name: string
+          reject_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          leader_id: string
+          logo_path?: string | null
+          name: string
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          leader_id?: string
+          logo_path?: string | null
+          name?: string
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       coach_sessions: {
         Row: {
           advice: string
@@ -711,6 +782,14 @@ export type Database = {
         Args: { p_role_id: string; p_user_id: string }
         Returns: boolean
       }
+      admin_review_clan_application: {
+        Args: {
+          p_approve: boolean
+          p_clan_id: string
+          p_reject_reason?: string
+        }
+        Returns: boolean
+      }
       admin_review_host_application: {
         Args: { p_application_id: string; p_approve: boolean }
         Returns: boolean
@@ -810,6 +889,18 @@ export type Database = {
       owner_set_site_maintenance: {
         Args: { p_enabled: boolean }
         Returns: boolean
+      }
+      public_clans: {
+        Args: never
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          leader_nick: string
+          logo_path: string
+          members: number
+          name: string
+        }[]
       }
       public_leaderboard: {
         Args: { p_limit?: number }
