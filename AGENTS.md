@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Declare optional browser and server environment properties with global augmentation in `src/env.ts` so preview typechecking includes them without modifying generated integration clients or bypassing runtime checks.
