@@ -9,4 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Declare optional browser and server environment properties in `src/env.d.ts` so strict typing works without modifying generated integration clients or bypassing runtime checks.
+- Declare optional browser and server environment properties with global augmentation in `src/env.ts` so preview typechecking includes them without modifying generated integration clients or bypassing runtime checks.
